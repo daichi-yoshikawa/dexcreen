@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dexcreen"
+version = "0.0.1"
+authors = [
+  { name = "Daichi Yoshikawa", email = "daichi.yoshikawa@gmail.com" }
+]
+description = "Display Dexcom G7 glucose readings on a Waveshare E-Ink display."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+keywords = ["dexcom", "raspberrypi", "eink", "t1d", "medical"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+  "Intended Audience :: Healthcare Industry",
+  "Topic :: Scientific/Engineering"
+]
+dependencies = [
+  # "requests>=2.28.0",
+  # "some-other-package==1.5.0"
+]
+
+[project.urls]
+"Source" = "https://github.com/daichi-yoshikawa/dexcreen"
+"Tracker" = "https://github.com/daichi-yoshikawa/dexcreen/issues"
