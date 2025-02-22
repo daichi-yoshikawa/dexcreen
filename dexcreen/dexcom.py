@@ -60,28 +60,3 @@ class Dexcom:
     if diff_mins == 0:
       return 'Now'
     return f'{diff_mins} min{"s" if diff_mins > 1 else ""} ago'
-
-
-
-
-  # @classmethod
-  # def get_minutes_since(cls):
-  #   if cls.data is None:
-  #     return None
-  #
-  #   data_timestamp = datetime.fromisoformat(data_timestamp_str)
-  #   now = datetime.now(data_timestamp.tzinfo)
-  #   diff_minutes = (now - data_timestamp).total_seconds() / 60
-  #   return diff_minutes
-
-  # def get_minutes_since_str(data_timestamp_str):
-  #   diff_minutes = get_minutes_since(data_timestamp_str)
-  #   diff_minutes = math.floor(min(diff_minutes, 60))
-  #
-  #   if diff_minutes == 0:
-  #     return 'Now'
-  #   return f'{diff_minutes} min{"s" if diff_minutes > 1 else ""} ago'
-  #
-  # def fetch(self):
-  #   self.data = dexcom.get_current_glucose_reading()
-
