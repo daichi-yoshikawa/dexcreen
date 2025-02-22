@@ -18,7 +18,7 @@ class User(Base):
   updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
 
-class MgdlReaging(Base):
+class MgdlReading(Base):
   __tablename__ = 'mgdl_readings'
 
   id = Column(Integer, primary_key=True, autoincrement=True)

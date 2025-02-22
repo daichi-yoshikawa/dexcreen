@@ -9,6 +9,7 @@ load_dotenv()
 
 @dataclass(frozen=True)
 class _Constants:
+  DB_TYPE: str = 'sqlite'
   CREDENTIAL_DELIMITER: str = ' '
 
 CONSTANTS = _Constants()
