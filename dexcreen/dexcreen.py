@@ -33,7 +33,7 @@ if __name__ == "__main__":
   logger.info('Starting app...')
 
   try:
-    # epd = WaveshareEpd()
+    # epd = WaveshareEpd.get_instance()
     # epd = epd7in5_V2.EPD()
 
     logging.info('Authenticating dexom credential...')
