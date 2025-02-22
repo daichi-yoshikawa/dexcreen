@@ -1,6 +1,6 @@
 import sys
 import os
-import dataclases import dataclass
+from dataclasses import dataclass
 
 from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
@@ -20,16 +20,12 @@ if os.path.exists(LIB_PATH):
   sys.path.append(LIB_PATH)
 
 
-Fonts = dict(
-  120=ImageFont.FreeTypeFont = (
-    ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 120)),
-  80=ImageFont.FreeTypeFont = (
-    ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 80)),
-  36=ImageFont.FreeTypeFont = (
-    ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 36)),
-  24=ImageFont.FreeTypeFont = (
-    ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 24)),
-)
+Fonts = {
+  '120': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 120),
+  '80': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 80),
+  '36': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 36),
+  '24': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 24),
+}
 
 
 class Canvas:
@@ -39,7 +35,7 @@ class Canvas:
     self.draw = ImageDraw.Draw(image)
 
   def write(self, xy, text, size, color=0):
-    self.draw.text(xy=xy, text=text, fill=color, font=Fonts[size])
+    self.draw.text(xy=xy, text=text, fill=color, font=Fonts[f'{size}'])
 
   def line(self, xy, color=0, width=0):
     self.draw.line(xy=xy, fill=color, width=width)
@@ -50,5 +46,5 @@ class Canvas:
   def arc(self, xy, color=0, fill=False):
     self.draw.arc(xy=xy, outline=color, fill=fill)
 
-  def chord(self, xy, start, end, color=0, fill=None)
+  def chord(self, xy, start, end, color=0, fill=None):
     self.draw.chord(xy=xy, start=start, end=end, outline=color, fill=fill)
