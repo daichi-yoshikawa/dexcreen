@@ -20,17 +20,35 @@ if os.path.exists(LIB_PATH):
   sys.path.append(LIB_PATH)
 
 
-@dataclass(frozen=True)
-class _Font:
-  Size120: ImageFont.FreeTypeFont = (
-    ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 120))
-  Size80: ImageFont.FreeTypeFont = (
-    ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 80))
-  Size36: ImageFont.FreeTypeFont = (
-    ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 36))
-  Size24: ImageFont.FreeTypeFont = (
-    ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 24))
-
-Font = _Font()
+Fonts = dict(
+  120=ImageFont.FreeTypeFont = (
+    ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 120)),
+  80=ImageFont.FreeTypeFont = (
+    ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 80)),
+  36=ImageFont.FreeTypeFont = (
+    ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 36)),
+  24=ImageFont.FreeTypeFont = (
+    ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 24)),
+)
 
 
+class Canvas:
+  def __init__(self, epd, vertical=False, background_color=255):
+    size = (epd.height, epd.width) if vertical else (epd.width, epd.height)
+    self.image = Image.new('1', size, background_color)
+    self.draw = ImageDraw.Draw(image)
+
+  def write(self, xy, text, size, color=0):
+    self.draw.text(xy=xy, text=text, fill=color, font=Fonts[size])
+
+  def line(self, xy, color=0, width=0):
+    self.draw.line(xy=xy, fill=color, width=width)
+
+  def rectangle(self, xy, color=0, fill=False):
+    self.draw.rectangle(xy=xy, outline=color, fill=fill)
+
+  def arc(self, xy, color=0, fill=False):
+    self.draw.arc(xy=xy, outline=color, fill=fill)
+
+  def chord(self, xy, start, end, color=0, fill=None)
+    self.draw.chord(xy=xy, start=start, end=end, outline=color, fill=fill)
