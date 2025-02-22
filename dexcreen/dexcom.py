@@ -15,16 +15,12 @@ class Dexcom:
   def __init__(self):
     load_dotenv()
 
-    account_id = os.environ['DEXCOM_ACCOUNT_ID']
     username = os.environ['DEXCOM_USERNAME']
     password = os.environ['DEXCOM_PASSWORD']
     region = os.environ['DEXCOM_REGION']
     unit = os.getenv('DEXCOM_READING_UNIT', 'mgdL')
 
-    self.dexcom = (
-      PyDexcom(account_id=account_id, password=password, region=region)\
-        if account_id else\
-          PyDexcom(username=username, password=password, region=region))
+    self.dexcom = PyDexcom(username=username, password=password, region=region)
     self.data = None
 
   def fetch(self):
@@ -39,11 +35,11 @@ class Dexcom:
     return self.data.trend_arrow if self.data is not None else 'N/A'
 
   @property
-  def mg_dL(self):
+  def mgdL(self):
     return self.data.value if self.data is not None else 'N/A'
 
   @property
-  def mmol_l(self):
+  def mmoll(self):
     return self.data.mmol_l if self.data is not None else 'N/A'
 
   @property

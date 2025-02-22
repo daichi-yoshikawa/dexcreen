@@ -32,7 +32,7 @@ class Canvas:
   def __init__(self, epd, vertical=False, background_color=255):
     size = (epd.height, epd.width) if vertical else (epd.width, epd.height)
     self.image = Image.new('1', size, background_color)
-    self.draw = ImageDraw.Draw(image)
+    self.draw = ImageDraw.Draw(self.image)
 
   def write(self, xy, text, size, color=0):
     self.draw.text(xy=xy, text=text, fill=color, font=Fonts[f'{size}'])
