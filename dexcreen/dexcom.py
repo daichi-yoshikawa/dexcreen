@@ -1,6 +1,7 @@
 import sys
 import os
 import math
+import sqlite3
 from datetime import datetime
 
 from dotenv import load_dotenv
@@ -13,10 +14,12 @@ from constants import DEXCOM
 class Dexcom:
   def __init__(self):
     load_dotenv()
+
     account_id = os.environ['DEXCOM_ACCOUNT_ID']
     username = os.environ['DEXCOM_USERNAME']
     password = os.environ['DEXCOM_PASSWORD']
     region = os.environ['DEXCOM_REGION']
+    unit = os.getenv('DEXCOM_READING_UNIT', 'mgdL')
 
     self.dexcom = (
       PyDexcom(account_id=account_id, password=password, region=region)\
