@@ -2,6 +2,8 @@
 *~
 ~*
 *.bak
+*.swp
+*.db
 
 # pyenv local version file
 .python-version
