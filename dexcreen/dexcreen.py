@@ -1,7 +1,7 @@
-import sys
 import os
 import logging
 import time
+from datetime import datetime, timedelta
 
 from dotenv import load_dotenv
 
@@ -18,204 +18,142 @@ load_dotenv()
 configure_logger()
 logger = logging.getLogger(__name__)
 
-def init_db():
+class Dexcreen:
   db = None
-
-  try:
-    db = get_db_instance(db_type=CONSTANTS.DB_TYPE)
-  except Exception as e:
-    logger.error(e)
-    logger.error('Failed to initialize database.')
-    if db is not None:
-      db.close()
-    logger.info('Shutdown app in init_db()...')
-    exit()
-
-  return db
-
-def load_data(db):
-  config = None
-  readings = None
-
-  try:
-    logger.info('Loading config...')
-    username = os.environ['DEXCOM_USERNAME']
-    unit = os.environ['DEXCOM_UNIT']
-    no_screen = os.environ['DEBUG_WITHOUT_SCREEN']
-
-    logger.debug('Load user_id...')
-    user_id = db.get_user_id(username=username)
-    logger.debug(f'Loaded user_id: {user_id}')
-
-    logger.debug('Load last 3 hours cgm reading...')
-    x, y = db.select_recent_readings(user_id=user_id, hours=3, unit=unit)
-    logger.debug(f'Loaded. x: {len(x)} points, y: {len(y)} points')
-
-    config = dict(unit=unit, no_screen=no_screen)
-    readings = dict(x=x, y=y)
-  except Exception as e:
-    logger.error(e)
-    logger.error('Failed to initialize app.')
-    if db is not None:
-      db.close()
-    logger.error('Shutdown app in init()...')
-    exit()
-
-  return config, user_id, readings
-
-
-def init_epd(db, no_screen=False):
   epd = None
+  cgm = None
+  unit = None
+  user_id = None
+  readings = dict(x=[], y=[])
+  canvas = None
+  initialized = False
 
-  def cleanup_and_exit():
-    if db is not None:
-      db.close()
-    if epd is not None:
-      epd.Clear()
-      WaveshareEpd.module_exit()
-    logger.error('Shutdown app in init_epd()...')
-    exit()
+  n_retry = 0
 
-  try:
-    WaveshareEpd.dummy = no_screen
-    epd = WaveshareEpd.get_instance()
-    epd.init()
-  except IOError as e:
-    logging.error(e)
-    cleanup_and_exit()
-  except KeyboardInterrupt:
-    logging.error("ctrl + c:")
-    cleanup_and_exit()
-  except Exception as e:
-    logger.error(e)
-    cleanup_and_exit()
-    exit()
+  CGM_REFRESH_INTERVAL = 60 * 5
+  MIN_INTERVAL = 5
+  MAX_RETRY = 5
 
-  return epd
+  def init(self):
+    self.init_db()
+    self.load_config()
+    self.init_cgm()
+    self.init_epd()
+    self.initialized = True
 
+  def cleanup(self):
+    self.initialized = False
 
-if __name__ == "__main__":
-  logger.info('Starting app...')
-
-  db = init_db()
-  config, user_id, readings = load_data(db)
-  epd = init_epd(db, no_screen=config['no_screen'])
-
-  try:
-    logging.info('Authenticating dexom credential...')
-    dexcom = Dexcom()
-    logging.info('Successfully authenticated.')
-
-    while True:
-      dexcom.fetch()
-      logger.info(
-        f'{dexcom.mgdL} {config["unit"]}, {dexcom.trend}, '
-        f'{dexcom.arrow}, {dexcom.n_mins_ago}')
-
-      epd.init_part()
-      canvas = Canvas(epd, vertical=False, background_color=255)
-      canvas.write((10, 0), f'{dexcom.mgdL}{config["unit"]}', size=120)
-      canvas.write((560, 0), f'{dexcom.arrow}', size=120)
-      canvas.write((10, 140), f'{dexcom.n_mins_ago}', size=80)
-
-      db.insert_reading(
-        user_id=user_id, value=dexcom.mgdL, timestamp=dexcom.timestamp, unit=config['unit'])
-
-      epd.display(epd.getbuffer(canvas.image))
-      epd.sleep()
-      time.sleep(3)
-  except IOError as e:
-    logging.error(e)
-  except KeyboardInterrupt:
-    logging.error("ctrl + c:")
-  except Exception as e:
-    pass
-  finally:
-    if db is not None:
-      db.close()
-    if epd is not None:
-      epd.Clear()
+    if self.db is not None:
+      self.db.close()
+    if self.epd is not None:
+      self.epd.Clear()
       WaveshareEpd.module_exit()
 
-  # epd = None
-  # try:
-  #   # username = os.environ['DEXCOM_USERNAME']
-  #   #
-  #   # logger.info('Initialize database...')
-  #   # db = db.get_instance(db_type='sqlite')
-  #   # user_id = db.get_user_id(username=username)
-  #   #
-  #   # logger.info('Select last 3 hours readings...')
-  #   # x, y = db.select_recent_readings(user_id=user_id, unit='mgdL')
-  #   # logger.info(f'{x}, {y}')
-  # 
-  #   WaveshareEpd.dummy = config['no_screen']
-  #   epd = WaveshareEpd.get_instance()
-  #   epd.init()
-  #   epd.Clear()
-  # 
-  #   logging.info('Authenticating dexom credential...')
-  #   dexcom = Dexcom()
-  #   logging.info('Successfully authenticated.')
-  # 
-  #   while True:
-  #     dexcom.fetch()
-  #     logger.info(
-  #       f'{dexcom.mgdL} mg/dL, {dexcom.trend}, '
-  #       f'{dexcom.arrow}, {dexcom.n_mins_ago}')
-  # 
-  #     epd.init_part()
-  #     canvas = Canvas(epd, vertical=False, background_color=255)
-  #     canvas.write((10, 0), f'{dexcom.mgdL}mg/dL', size=120)
-  #     canvas.write((560, 0), f'{dexcom.arrow}', size=120)
-  #     canvas.write((10, 140), f'{dexcom.n_mins_ago}', size=80)
-  # 
-  #     """
-  #     db.insert_reading(
-  #       user_id=user_id, value=dexcom.mgdL, timestamp=dexcom.timestamp, unit='mgdL')
-  #     """
-  # 
-  #     epd.display(epd.getbuffer(canvas.image))
-  #     epd.sleep()
-  #     time.sleep(3)
-  # 
-  #   # Drawing on the Horizontal image
-  #   # logging.info("Drawing on the Horizontal image...")
-  #   # epd.init_fast()
-  #   # Himage = Image.new('1', (epd.width, epd.height), 255)  # 255: clear the frame
-  #   # draw = ImageDraw.Draw(Himage)
-  #   """
-  #   draw.line((20, 50, 70, 100), fill = 0)
-  #   draw.line((70, 50, 20, 100), fill = 0)
-  #   draw.rectangle((20, 50, 70, 100), outline = 0)
-  #   draw.line((165, 50, 165, 100), fill = 0)
-  #   draw.line((140, 75, 190, 75), fill = 0)
-  #   draw.arc((140, 50, 190, 100), 0, 360, fill = 0)
-  #   draw.rectangle((80, 50, 130, 100), fill = 0)
-  #   draw.chord((200, 50, 250, 100), 0, 360, fill = 0)
-  #   """
-  #   """
-  #   # partial update
-  #   logging.info("5.show time")
-  #   epd.init_part()
-  #   # Himage = Image.new('1', (epd.width, epd.height), 0)
-  #   # draw = ImageDraw.Draw(Himage)
-  #   num = 0
-  #   while (True):
-  #     draw.rectangle((10, 120, 130, 170), fill = 255)
-  #     draw.text((10, 120), time.strftime('%H:%M:%S'), font = font24, fill = 0)
-  #     epd.display_Partial(epd.getbuffer(Himage),0, 0, epd.width, epd.height)
-  #     num = num + 1
-  #     if(num == 10):
-  #       break
-  #   """
-  # except IOError as e:
-  #   logging.info(e)
-  # except KeyboardInterrupt:
-  #   logging.info("ctrl + c:")
-  # finally:
-  #   epd.init()
-  #   epd.Clear()
-  #   WaveshareEpd.module_exit()
-  #   db.close()
-  #   exit()
+  def init_db(self):
+    try:
+      logger.info('Initialize db...')
+      self.db = get_db_instance(db_type=CONSTANTS.DB_TYPE)
+      logger.info('Initialized db.')
+    except Exception as e:
+      logger.error(e)
+      self.cleanup()
+      logger.error('Shutdown app in init_db...')
+      exit()
+
+  def load_config(self):
+    try:
+      logger.info('Loading config...')
+      username = os.environ['DEXCOM_USERNAME']
+      self.unit = os.environ['DEXCOM_UNIT']
+      self.no_screen = os.environ['DEBUG_WITHOUT_SCREEN']
+
+      logger.debug('Load user_id...')
+      self.user_id = self.db.get_user_id(username=username)
+      logger.debug(f'Loaded user_id: {self.user_id}')
+
+      logger.debug('Load last 3 hours cgm reading...')
+      x, y = self.db.select_recent_readings(user_id=self.user_id, hours=3, unit=self.unit)
+      self.readings = dict(x=x, y=y)
+      logger.debug(f'Loaded x: {len(x)} points, y: {len(y)} points.')
+    except Exception as e:
+      logger.error(e)
+      self.cleanup()
+      logger.error('Shutdown app in load_config...')
+      exit()
+
+  def init_cgm(self):
+    try:
+      self.cgm = Dexcom()
+    except Exception as e:
+      logger.error(e)
+      self.cleanup()
+      logger.error('Shutdown app in init cgm...')
+      exit()
+
+  def init_epd(self):
+    try:
+      logger.info('Initialize epd...')
+      WaveshareEpd.dummy = False
+      self.epd = WaveshareEpd.get_instance()
+      self.epd.init()
+      self.canvas = Canvas(self.epd, vertical=False, background_color=255)
+      logger.info('Initialized epd.')
+    except KeyboardInterrupt as e:
+      logger.info('ctrl + c')
+      self.cleanup()
+      logger.info('Shutdown app in init_epd...')
+      exit()
+    except Exception as e:
+      logger.error(e)
+      self.cleanup()
+      logger.error('Shutdown app in init_epd...')
+      exit()      
+
+  def get_interval(self):
+    target_timestamp = (
+      self.cgm.timestamp + timedelta(seconds=self.CGM_REFRESH_INTERVAL))
+    now = datetime.now().astimezone(target_timestamp.tzinfo)
+    delta = (target_timestamp - now).total_seconds()
+    logger.info(f'Wait {delta}sec')
+
+    require_retry = delta > self.CGM_REFRESH_INTERVAL
+    if require_retry:
+      self.n_retry = min(self.n_retry + 1, self.MAX_RETRY)
+      return self.MIN_INTERVAL if self.n_retry < self.MAX_RETRY else self.CGM_REFRESH_INTERVAL
+    else:
+      self.n_retry = 0
+
+    return min(max(delta, 0), self.CGM_REFRESH_INTERVAL)
+
+  @property
+  def cgm_value(self):
+    return self.cgm.mgdL if self.unit == 'mg/dL' else self.cgm.mmoll
+
+  def fetch_cgm_data(self):
+    if not self.initialized:
+      return
+
+    self.cgm.fetch()
+    logger.info(
+      f'{self.cgm_value} {self.unit}, {self.cgm.trend}, '
+      f'{self.cgm.arrow}, {self.cgm.n_mins_ago}')
+
+    self.db.insert_reading(
+      user_id=self.user_id, value=self.cgm_value, timestamp=self.cgm.timestamp, unit=self.unit)
+
+  def display_letters(self):
+    if not self.initialized:
+      return
+    self.epd.init_part()
+
+    canvas = Canvas(self.epd, vertical=False, background_color=255)
+    canvas.write((10, 0), f'{self.cgm_value}{self.unit}', size=120)
+    canvas.write((560, 0), f'{self.cgm.arrow}', size=120)
+    canvas.write((10, 140), f'{self.cgm.n_mins_ago}', size=80)
+    self.epd.display(self.epd.getbuffer(canvas.image))
+    self.epd.sleep()
+
+  def display_chart(self):
+    if not self.initialized:
+      return
