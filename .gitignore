@@ -51,3 +51,5 @@ Thumbs.db
 # Do NOT ignore anything in `externals/`
 !externals/
 !externals/**
+
+externals/**/*.egg-info/
