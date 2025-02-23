@@ -31,8 +31,10 @@ class Dexcreen:
   n_retry = 0
 
   CGM_REFRESH_INTERVAL = 60 * 5
-  MIN_INTERVAL = 5
-  MAX_RETRY = 5
+  INTERVAL_MARGIN = 5
+  RECOVERY_INTERVAL = 45 * 5
+  MIN_INTERVAL = 10
+  MAX_RETRY = 3
 
   def init(self):
     self.init_db()
@@ -97,6 +99,7 @@ class Dexcreen:
       WaveshareEpd.dummy = False
       self.epd = WaveshareEpd.get_instance()
       self.epd.init()
+      self.epd.Clear()
       self.canvas = Canvas(self.epd, vertical=False, background_color=255)
       logger.info('Initialized epd.')
     except KeyboardInterrupt as e:
@@ -111,11 +114,25 @@ class Dexcreen:
       exit()      
 
   def get_interval(self):
-    target_timestamp = (
-      self.cgm.timestamp + timedelta(seconds=self.CGM_REFRESH_INTERVAL))
-    now = datetime.now().astimezone(target_timestamp.tzinfo)
-    delta = (target_timestamp - now).total_seconds()
-    logger.info(f'Wait {delta}sec')
+    if self.cgm.signal_loss:
+      return self.RECOVERY_INTERVAL
+
+    estimated_next_timestamp = (
+      self.cgm.timestamp + timedelta(
+        seconds=self.CGM_REFRESH_INTERVAL + self.INTERVAL_MARGIN))
+    now = datetime.now().astimezone(estimated_next_timestamp.tzinfo)
+    delta = (estimated_next_timestamp - now).total_seconds()
+
+    fetched_too_early_or_too_late = delta < 0
+    if fetched_too_early_or_too_late:
+      logger.debug('Fetched too early or too late.')
+      if self.n_retry < self.MAX_RETRY:
+        self.n_retry = min(self.n_retry + 1, self.MAX_RETRY)
+        return self.MIN_INTERVAL
+      return self.RECOVERY_INTERVAL
+
+    self.n_retry = 0
+    return delta
 
     require_retry = delta > self.CGM_REFRESH_INTERVAL
     if require_retry:
@@ -138,9 +155,12 @@ class Dexcreen:
     logger.info(
       f'{self.cgm_value} {self.unit}, {self.cgm.trend}, '
       f'{self.cgm.arrow}, {self.cgm.n_mins_ago}')
+    if self.cgm.signal_loss:
+      return
 
     self.db.insert_reading(
-      user_id=self.user_id, value=self.cgm_value, timestamp=self.cgm.timestamp, unit=self.unit)
+      user_id=self.user_id, value=self.cgm_value,
+      timestamp=self.cgm.timestamp, unit=self.unit)
 
   def display_letters(self):
     if not self.initialized:
@@ -148,12 +168,39 @@ class Dexcreen:
     self.epd.init_part()
 
     canvas = Canvas(self.epd, vertical=False, background_color=255)
-    canvas.write((10, 0), f'{self.cgm_value}{self.unit}', size=120)
-    canvas.write((560, 0), f'{self.cgm.arrow}', size=120)
-    canvas.write((10, 140), f'{self.cgm.n_mins_ago}', size=80)
+    self.write_letters(canvas)
     self.epd.display(self.epd.getbuffer(canvas.image))
     self.epd.sleep()
+
+  def write_letters(self, canvas):
+    canvas.write((20, 0), f'{self.cgm_value}', size=140)
+    canvas.write(
+      (270 if self.unit == 'mg/dL' else 300, 70), f'{self.unit}', size=60)
+    canvas.write(
+      (520 if self.unit == 'mg/dL' else 550, 0), f'{self.cgm.arrow}', size=140)
+
+    diff_mins = self.cgm.diff_mins
+    if diff_mins is None:
+      canvas.write((30, 140), 'N/A', size=80)
+    elif diff_mins == 0:
+      canvas.write((30, 140), 'Now', size=80)
+    elif diff_mins > 60:
+      canvas.write((30, 140), f'60+', size=80)
+      canvas.write((170, 165), f'mins ago', size=48)
+    elif diff_mins > 9:
+      canvas.write((30, 140), f'{diff_mins}', size=80)
+      canvas.write((130, 165), f'mins ago', size=48)
+    else:
+      canvas.write((30, 140), f'{diff_mins}', size=80)
+      text = 'mins' if diff_mins > 1 else 'min ago'
+      canvas.write((85, 165), text, size=48)
 
   def display_chart(self):
     if not self.initialized:
       return
+    self.epd.init_part()
+
+    canvas = Canvas(self.epd, vertical=True, background_color=255)
+    self.write_letters(canvas)
+    #canvas.rectangle((20, 50, 70, 100))
+

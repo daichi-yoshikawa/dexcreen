@@ -21,10 +21,14 @@ if os.path.exists(LIB_PATH):
 
 
 Fonts = {
+  '140': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 140),
   '120': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 120),
   '80': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 80),
+  '60': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 60),
+  '48': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 48),
   '36': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 36),
   '24': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 24),
+  '12': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 12),
 }
 
 
@@ -40,10 +44,10 @@ class Canvas:
   def line(self, xy, color=0, width=0):
     self.draw.line(xy=xy, fill=color, width=width)
 
-  def rectangle(self, xy, color=0, fill=False):
+  def rectangle(self, xy, color=0, fill=None):
     self.draw.rectangle(xy=xy, outline=color, fill=fill)
 
-  def arc(self, xy, color=0, fill=False):
+  def arc(self, xy, color=0, fill=None):
     self.draw.arc(xy=xy, outline=color, fill=fill)
 
   def chord(self, xy, start, end, color=0, fill=None):

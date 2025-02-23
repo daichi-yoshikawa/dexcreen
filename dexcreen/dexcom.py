@@ -24,7 +24,16 @@ class Dexcom:
     self.data = None
 
   def fetch(self):
-    self.data = self.dexcom.get_current_glucose_reading()
+    data = self.dexcom.get_current_glucose_reading()
+    if data is None:
+      return
+
+    self.data = data
+
+  @property
+  def signal_loss(self):
+    if self.data is None:
+      return True
 
   @property
   def trend(self):
@@ -45,6 +54,17 @@ class Dexcom:
   @property
   def timestamp(self):
     return self.data.datetime if self.data is not None else 'N/A'
+
+  @property
+  def diff_mins(self):
+    if self.data is None:
+      return None
+
+    latest = datetime.fromisoformat(
+      self.timestamp.strftime(DEXCOM.TIMESTAMP_FORMAT))
+    now = datetime.now(latest.tzinfo)
+    diff_mins = (now - latest).total_seconds() / 60
+    return math.floor(diff_mins)
 
   @property
   def n_mins_ago(self):
