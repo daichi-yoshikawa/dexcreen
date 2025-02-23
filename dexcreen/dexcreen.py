@@ -3,8 +3,6 @@ import logging
 import time
 from datetime import datetime, timedelta
 
-from dotenv import load_dotenv
-
 from constants import CONSTANTS
 from db import get_db_instance
 from dexcom import Dexcom
@@ -12,8 +10,6 @@ from drawer import Canvas
 from logger_setup import configure_logger
 from screen import WaveshareEpd
 
-
-load_dotenv()
 
 configure_logger()
 logger = logging.getLogger(__name__)

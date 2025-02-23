@@ -3,15 +3,12 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 
-from dotenv import load_dotenv
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 from constants import DEXCOM
 from models import User, MgdlReading, MmollReading
 
-
-load_dotenv()
 
 logger = logging.getLogger(__name__)
 

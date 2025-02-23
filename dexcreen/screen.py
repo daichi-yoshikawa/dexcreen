@@ -1,11 +1,6 @@
 import os
 import importlib
 
-from dotenv import load_dotenv
-
-
-load_dotenv()
-
 
 class DummyEpd:
   def init(self):

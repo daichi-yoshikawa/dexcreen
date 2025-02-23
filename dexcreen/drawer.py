@@ -2,11 +2,8 @@ import sys
 import os
 from dataclasses import dataclass
 
-from dotenv import load_dotenv
 from PIL import Image, ImageDraw, ImageFont
 
-
-load_dotenv()
 
 PIC_PATH = os.path.join(
   os.path.dirname(os.path.dirname(os.path.realpath(__file__))),
@@ -19,7 +16,6 @@ FONT_FILE_NAME = 'Font.ttc'
 if os.path.exists(LIB_PATH):
   sys.path.append(LIB_PATH)
 
-
 Fonts = {
   '140': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 140),
   '120': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 120),
@@ -30,7 +26,6 @@ Fonts = {
   '24': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 24),
   '12': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 12),
 }
-
 
 class Canvas:
   def __init__(self, epd, vertical=False, background_color=255):
@@ -45,7 +40,7 @@ class Canvas:
     self.draw.line(xy=xy, fill=color, width=width)
 
   def rectangle(self, xy, color=0, fill=None):
-    self.draw.rectangle(xy=xy, outline=color, fill=fill)
+    self.draw.rectangle(xy=xy, outline='(0, 0, 0)', fill='(0, 0, 0)')
 
   def arc(self, xy, color=0, fill=None):
     self.draw.arc(xy=xy, outline=color, fill=fill)
