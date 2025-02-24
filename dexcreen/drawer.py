@@ -17,8 +17,10 @@ if os.path.exists(LIB_PATH):
   sys.path.append(LIB_PATH)
 
 Fonts = {
+  '200': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 200),
   '140': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 140),
   '120': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 120),
+  '100': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 100),
   '80': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 80),
   '60': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 60),
   '48': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 48),

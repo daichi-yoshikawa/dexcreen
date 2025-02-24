@@ -25,7 +25,8 @@ def fetch_cgm_data(stop_event):
         dexcreen.fetch_cgm_data()
         interval = dexcreen.get_interval()
         logger.info(f'Fetch next data {interval} sec later.')
-      except Exception:
+      except Exception as e:
+        logger.error(e)
         stop_event.set()
     woke_up_early = stop_event.wait(timeout=interval)
     if woke_up_early:
@@ -37,7 +38,8 @@ def refresh_screen_letters(stop_event):
     with lock:
       try:
         dexcreen.display_letters()
-      except Exception:
+      except Exception as e:
+        logger.error(e)
         stop_event.set()
     woke_up_early = stop_event.wait(timeout=3)
     if woke_up_early:
@@ -49,31 +51,12 @@ def refresh_screen_chart(stop_event):
     with lock:
       try:
         dexcreen.display_chart()
-      except Exception:
+      except Exception as e:
+        logger.error(e)
         stop_event.set()
     woke_up_early = stop_event.wait(timeout=10)
     if woke_up_early:
       break
-
-
-def worker():
-  logger.info('worker is called.')
-  dexcreen = Dexcreen()
-
-  while True:
-    try:
-      dexcreen.run()
-      dexcreen.sleep()
-    except KeyboardInterrupt as e:
-      logger.info('ctrl + c')
-      dexcreen.cleanup()
-      logger.info('Shutdown app in worker...')
-      exit()
-    except Exception as e:
-      logger.error(e)
-      dexcreen.cleanup()
-      logger.info('Shutdown app in worker...')
-      exit()
 
 
 if __name__ == "__main__":
@@ -106,3 +89,6 @@ if __name__ == "__main__":
     logger.error('All threads stopped due to Exception.')
   else:
     logger.info('All threads stopped without error')
+  finally:
+    dexcreen.cleanup()
+    logger.info('Dexcreen exits.')

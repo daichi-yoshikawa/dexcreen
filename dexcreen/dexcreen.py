@@ -40,13 +40,18 @@ class Dexcreen:
     self.initialized = True
 
   def cleanup(self):
+    logger.info('Clean up dexcreen...')
     self.initialized = False
 
     if self.db is not None:
+      logger.info('Close database...')
       self.db.close()
     if self.epd is not None:
+      logger.info('Clear screen...')
+      self.epd.init()
       self.epd.Clear()
-      WaveshareEpd.module_exit()
+      self.epd.sleep()
+      #WaveshareEpd.module_exit()
 
   def init_db(self):
     try:
@@ -165,31 +170,52 @@ class Dexcreen:
 
     canvas = Canvas(self.epd, vertical=False, background_color=255)
     self.write_letters(canvas)
+    #self.epd.display(self.epd.getbuffer(canvas.image))
+    #self.epd.sleep()
+
+    #canvas = Canvas(self.epd, vertical=False, background_color=255)
+    canvas.draw.rectangle((20, 240, 780, 460), outline=0, fill=128)
     self.epd.display(self.epd.getbuffer(canvas.image))
-    self.epd.sleep()
 
   def write_letters(self, canvas):
-    canvas.write((20, 0), f'{self.cgm_value}', size=140)
-    canvas.write(
-      (270 if self.unit == 'mg/dL' else 300, 70), f'{self.unit}', size=60)
-    canvas.write(
-      (520 if self.unit == 'mg/dL' else 550, 0), f'{self.cgm.arrow}', size=140)
-
-    diff_mins = self.cgm.diff_mins
-    if diff_mins is None:
-      canvas.write((30, 140), 'N/A', size=80)
-    elif diff_mins == 0:
-      canvas.write((30, 140), 'Now', size=80)
-    elif diff_mins > 60:
-      canvas.write((30, 140), f'60+', size=80)
-      canvas.write((170, 165), f'mins ago', size=48)
-    elif diff_mins > 9:
-      canvas.write((30, 140), f'{diff_mins}', size=80)
-      canvas.write((130, 165), f'mins ago', size=48)
+    cgm_value = self.cgm_value
+    if cgm_value is None:
+      canvas.write((20, 0), 'N/A', size=200)
+    elif self.unit != 'mg/dL':
+      offset = 0 if cgm_value < 100 else 100
+      canvas.write((20, 0), f'{cgm_value}', size=200)
+      canvas.write((260 + offset, 135), f'{self.unit}', size=48)
     else:
-      canvas.write((30, 140), f'{diff_mins}', size=80)
-      text = 'mins' if diff_mins > 1 else 'min ago'
-      canvas.write((85, 165), text, size=48)
+      offset = 0 if cgm_value < 10 else 100
+      canvas.write((20, 0), f'{cgm_value}', size=200)
+      canvas.write((320 + offset, 135), f'mmol/L', size=48)
+    canvas.write(
+      (620 if self.cgm.arrow is None else 660, 80),
+      f'{self.cgm.arrow}',
+      size=80 if self.cgm.arrow is None else 120)
+
+    diff_mins = 5
+    #diff_mins = self.cgm.diff_mins
+    if diff_mins is None:
+      canvas.write((620, 25), 'N/A', size=80)
+    elif diff_mins == 0:
+      canvas.write((610, 25), 'Now', size=80)
+    elif diff_mins > 60:
+      canvas.write((505, 25), f'60+', size=100)
+      canvas.write((680, 40), f'mins', size=36)
+      canvas.write((680, 76), f'ago', size=36)
+    elif diff_mins > 9:
+      canvas.write((545, 20), f'{diff_mins}', size=100)
+      canvas.write((680, 40), f'mins', size=36)
+      canvas.write((680, 76), f'ago', size=36)
+    elif diff_mins > 1:
+      canvas.write((600, 20), f'{diff_mins}', size=100)
+      canvas.write((680, 40), f'mins', size=36)
+      canvas.write((680, 76), f'ago', size=36)
+    elif diff_mins == 1:
+      canvas.write((620, 20), f'{diff_mins}', size=100)
+      canvas.write((695, 40), f'min', size=36)
+      canvas.write((695, 76), f'ago', size=36)
 
   def display_chart(self):
     if not self.initialized:
