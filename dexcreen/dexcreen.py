@@ -181,7 +181,7 @@ class Dexcreen:
     cgm_value = self.cgm_value
     if cgm_value is None:
       canvas.write((20, 0), 'N/A', size=200)
-    elif self.unit != 'mg/dL':
+    elif self.unit == 'mg/dL':
       offset = 0 if cgm_value < 100 else 100
       canvas.write((20, 0), f'{cgm_value}', size=200)
       canvas.write((260 + offset, 135), f'{self.unit}', size=48)
@@ -194,8 +194,7 @@ class Dexcreen:
       f'{self.cgm.arrow}',
       size=80 if self.cgm.arrow is None else 120)
 
-    diff_mins = 5
-    #diff_mins = self.cgm.diff_mins
+    diff_mins = self.cgm.diff_mins
     if diff_mins is None:
       canvas.write((620, 25), 'N/A', size=80)
     elif diff_mins == 0:
