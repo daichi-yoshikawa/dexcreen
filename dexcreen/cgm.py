@@ -50,6 +50,11 @@ class Cgm(ABC):
 
   @property
   @abstractmethod
+  def reading(self):
+    pass
+
+  @property
+  @abstractmethod
   def timestamp(self):
     pass
 
@@ -66,6 +71,9 @@ class Cgm(ABC):
 
 class DummyCgm(Cgm):
   DUMMY_MGDL_VALUES = [40, 60, 90, 120, 180, 240, 400]
+
+  def __init__(self):
+    self.unit = os.getenv('DEXCOM_READING_UNIT', 'mg/dL')
 
   def fetch(self):
     pass
@@ -95,6 +103,10 @@ class DummyCgm(Cgm):
     return round(self.mgdL / 18)
 
   @property
+  def reading(self):
+    return self.mgdL if self.unit == 'mg/dL' else self.mmoll
+
+  @property
   def timestamp(self):
     return datetime.now() + timedelta(seconds=10)
 
@@ -115,7 +127,7 @@ class Dexcom(Cgm):
     username = os.environ['DEXCOM_USERNAME']
     password = os.environ['DEXCOM_PASSWORD']
     region = os.environ['DEXCOM_REGION']
-    unit = os.getenv('DEXCOM_READING_UNIT', 'mgdL')
+    self.unit = os.getenv('DEXCOM_READING_UNIT', 'mg/dL')
 
     self.dexcom = PyDexcom(username=username, password=password, region=region)
     self.data = None
@@ -151,6 +163,10 @@ class Dexcom(Cgm):
   @property
   def mmoll(self):
     return self.data.mmol_l if self.data is not None else 'N/A'
+
+  @property
+  def reading(self):
+    return self.mgdL if self.unit == 'mg/dL' else self.mmoll
 
   @property
   def timestamp(self):

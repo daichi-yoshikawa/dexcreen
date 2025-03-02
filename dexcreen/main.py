@@ -24,14 +24,11 @@ def fetch_cgm_data(stop_event, exception_queue):
     interval = 30
     with lock:
       try:
-        print('debug1')
         dexcreen.fetch_cgm_data()
-        print('debug2')
         interval = dexcreen.get_interval()
-        print('debug3')
         logger.info(f'Fetch next data {interval} sec later.')
       except Exception as e:
-        logger.error(e)
+        logger.error(f'Exception in fetch_cgm_data thread: {e}')
         exception_queue.put(e)
         stop_event.set()
     stop_event.wait(timeout=interval)
@@ -43,7 +40,7 @@ def refresh_screen_letters(stop_event, exception_queue, timeout=3):
       try:
         dexcreen.display_letters()
       except Exception as e:
-        logger.error(e)
+        logger.error(f'Exception in refresh_screen_letters thread: {e}')
         exception_queue.put(e)
         stop_event.set()
     stop_event.wait(timeout=timeout)
@@ -55,7 +52,7 @@ def refresh_screen_chart(stop_event, exception_queue, timeout=10):
       try:
         dexcreen.display_chart()
       except Exception as e:
-        logger.error(e)
+        logger.error(f'Exception in refresh_screen_chart: {e}')
         exception_queue.put(e)
         stop_event.set()
     stop_event.wait(timeout=timeout)

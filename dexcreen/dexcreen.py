@@ -133,15 +133,13 @@ class Dexcreen:
     require_retry = delta > self.CGM_REFRESH_INTERVAL
     if require_retry:
       self.n_retry = min(self.n_retry + 1, self.MAX_RETRY)
-      return self.MIN_INTERVAL if self.n_retry < self.MAX_RETRY else self.CGM_REFRESH_INTERVAL
+      if self.n_retry < self.MAX_RETRY:
+        return self.MIN_INTERVAL
+      return self.CGM_REFRESH_INTERVAL
     else:
       self.n_retry = 0
 
     return min(max(delta, 0), self.CGM_REFRESH_INTERVAL)
-
-  @property
-  def cgm_value(self):
-    return self.cgm.mgdL if self.unit == 'mg/dL' else self.cgm.mmoll
 
   def fetch_cgm_data(self):
     if not self.initialized:
@@ -149,13 +147,13 @@ class Dexcreen:
 
     self.cgm.fetch()
     logger.info(
-      f'{self.cgm_value} {self.unit}, {self.cgm.trend}, '
+      f'{self.cgm.reading} {self.unit}, {self.cgm.trend}, '
       f'{self.cgm.arrow}, {self.cgm.n_mins_ago}')
     if self.cgm.signal_loss:
       return
 
     self.db.insert_reading(
-      user_id=self.user_id, value=self.cgm_value,
+      user_id=self.user_id, value=self.cgm.reading,
       timestamp=self.cgm.timestamp, unit=self.unit)
 
   def display_letters(self):
@@ -169,16 +167,16 @@ class Dexcreen:
       0, 0, self.epd.width, round(self.epd.height * 0.5))
 
   def write_letters(self, canvas):
-    cgm_value = self.cgm_value
-    if cgm_value is None:
+    reading = self.cgm.reading
+    if reading is None:
       canvas.write((20, 0), 'N/A', size=200)
     elif self.unit == 'mg/dL':
-      offset = 0 if cgm_value < 100 else 100
-      canvas.write((20, 0), f'{cgm_value}', size=200)
+      offset = 0 if reading < 100 else 100
+      canvas.write((20, 0), f'{reading}', size=200)
       canvas.write((260 + offset, 135), f'{self.unit}', size=48)
     else:
-      offset = 0 if cgm_value < 10 else 100
-      canvas.write((20, 0), f'{cgm_value}', size=200)
+      offset = 0 if reading < 10 else 100
+      canvas.write((20, 0), f'{reading}', size=200)
       canvas.write((320 + offset, 135), f'mmol/L', size=48)
     canvas.write(
       (620 if self.cgm.arrow is None else 660, 80),
