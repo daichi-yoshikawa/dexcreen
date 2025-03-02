@@ -1,20 +1,26 @@
 from PIL import Image, ImageDraw
 
-class CgmChartImage:
+from canvas import Canvas
+
+
+class CgmChart:
+  UNIT_MINS = 15
+
   def __init__(
-      self, height, width, x_offset=0, y_offset=0, unit_mins=0.25,
-      displayed_hours=3,  y_unit=10, y_min=40, unit='mg/dL', background_color=255):
+      self, epd, height, width, x_offset=0, y_offset=0, display_hours=3,
+      y_max=300, y_min=40, unit='mg/dL', background_color=255):
     self.height = height
     self.width = width
 
-    self.image = Image.new('1', (height, width), background_color)
-    self.draw = ImageDraw.Draw(self.image)
+    self.canvas = Canvas(
+      epd=epd, vertical=False, background_color=background_color)
+    #self.image = Image.new('1', (height, width), background_color)
+    #self.draw = ImageDraw.Draw(self.image)
 
     self.x_offset = x_offset
     self.y_offset = y_offset
 
-    self.unit_mins = unit_mins
-    self.displayed_hours = displayed_hours
+    self.display_hours = display_hours
 
     self.y_max = y_max if unit == 'mg/dL' else round(y_max * 18)
     self.y_min = y_min if unit == 'mg/dL' else round(y_min * 18)
@@ -55,14 +61,12 @@ class CgmChartImage:
     return (self.x_right, self.y_bottom)
 
   @property
-  def pixels_per_sec(self):
-    return round(self.width / self.displayed_hours / self.x_unit)
+  def pixels_per_x_unit(self):
+    return round(self.width / self.display_hours / 60 * self.UNIT_MINS)
 
   @property
   def pixels_per_y_unit(self):
     return round(self.height / (self.y_max - self.y_min) * self.y_unit)
 
-  @property
-  def x_unit_seconds(self):
-    return round(60 * 60 * self.x_unit)
-
+  def draw(self):
+    self.canvas.draw.rectangle((20, 240, 780, 460), outline=0, fill=128)

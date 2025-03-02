@@ -7,11 +7,11 @@ from constants import CONSTANTS
 from db import get_db_instance
 from dexcom import Dexcom
 from canvas import Canvas
+from chart import CgmChart
 from logger_setup import configure_logger
 from screen import WaveshareEpd
 
 
-configure_logger()
 logger = logging.getLogger(__name__)
 
 class Dexcreen:
@@ -101,7 +101,7 @@ class Dexcreen:
       self.epd = WaveshareEpd.get_instance()
       self.epd.init()
       self.epd.Clear()
-      self.canvas = Canvas(self.epd, vertical=False, background_color=255)
+      self.canvas = Canvas(epd=self.epd, vertical=False, background_color=255)
       logger.info('Initialized epd.')
     except KeyboardInterrupt as e:
       logger.info('ctrl + c')
@@ -168,14 +168,13 @@ class Dexcreen:
       return
     self.epd.init_part()
 
-    canvas = Canvas(self.epd, vertical=False, background_color=255)
-    self.write_letters(canvas)
-    #self.epd.display(self.epd.getbuffer(canvas.image))
-    #self.epd.sleep()
-
-    #canvas = Canvas(self.epd, vertical=False, background_color=255)
-    canvas.draw.rectangle((20, 240, 780, 460), outline=0, fill=128)
-    self.epd.display(self.epd.getbuffer(canvas.image))
+    try:
+      canvas = Canvas(epd=self.epd, vertical=False, background_color=255)
+      self.write_letters(canvas)
+      self.epd.display_Partial(self.epd.getbuffer(canvas.image),
+        0, 0, self.epd.width, round(self.epd.height * 0.5))
+    except Exception as e:
+      logger.error(e)
 
   def write_letters(self, canvas):
     cgm_value = self.cgm_value
@@ -221,7 +220,17 @@ class Dexcreen:
       return
     self.epd.init_part()
 
-    canvas = Canvas(self.epd, vertical=True, background_color=255)
-    self.write_letters(canvas)
-    #canvas.rectangle((20, 50, 70, 100))
-
+    chart = CgmChart(
+      epd=self.epd,
+      height=round(self.epd.height * 0.5),
+      width=self.epd.width,
+      x_offset=0,
+      y_offset=round(self.epd.height*0.5),
+      display_hours=3,
+      y_max=300,
+      y_min=40,
+      unit=self.unit,
+      background_color=255)
+    chart.draw()
+    self.write_letters(chart.canvas)
+    self.epd.display(self.epd.getbuffer(chart.canvas.image))
