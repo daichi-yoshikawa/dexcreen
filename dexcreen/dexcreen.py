@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from constants import CONSTANTS
 from db import get_db_instance
 from dexcom import Dexcom
-from drawer import Canvas
+from canvas import Canvas
 from logger_setup import configure_logger
 from screen import WaveshareEpd
 
