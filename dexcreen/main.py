@@ -21,10 +21,14 @@ dexcreen = Dexcreen()
  
 def fetch_cgm_data(stop_event, exception_queue):
   while not stop_event.is_set():
+    interval = 30
     with lock:
       try:
+        print('debug1')
         dexcreen.fetch_cgm_data()
+        print('debug2')
         interval = dexcreen.get_interval()
+        print('debug3')
         logger.info(f'Fetch next data {interval} sec later.')
       except Exception as e:
         logger.error(e)

@@ -15,6 +15,18 @@ class DummyEpd:
   def Clear(self):
     pass
 
+  def getbuffer(self, image):
+    pass
+
+  def display(self, image_buffer):
+    pass
+
+  def display_Partial(self, image_buffer, x, y, width, height):
+    pass
+
+  def sleep(self):
+    pass
+
   @property
   def height(self):
     return 320
@@ -23,19 +35,8 @@ class DummyEpd:
   def width(self):
     return 480
 
-  def getbuffer(self, image):
-    pass
 
-  def display(self, image_buffer):
-    pass
-
-  def display_Partial(image_buffer, x, y, width, height):
-    pass
-
-  def sleep(self):
-    pass
-
-
+"""
 class WaveshareEpd:
   screen_module = None
   dummy = False
@@ -65,3 +66,21 @@ class WaveshareEpd:
     if cls.screen_module is None:
       cls.import_screen_module()
     cls.screen_module.epdconfig.module_exit(cleanup=True)
+
+  @property
+  def is_dummy(self):
+    return True
+"""
+
+
+def get_instance():
+  use_dummy_epd = os.getenv('USE_DUMMY_EPD', 'False').lower() in ['1', 'true', 'yes']
+  if use_dummy_epd:
+    return DummyEpd()
+
+  try:
+    screen_module = os.getenv('SCREEN_MODULE', 'epd7in5_V2')
+    screen_module = importlib.import_module(f'waveshare_epd.{screen_module}')
+    return screen_module.EPD()
+  except ModuleNotFoundError:
+    raise ImportError(f'Could not import waveshare_epd.{screen_module}')

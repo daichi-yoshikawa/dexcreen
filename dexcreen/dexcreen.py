@@ -3,13 +3,12 @@ import logging
 import time
 from datetime import datetime, timedelta
 
-from constants import CONSTANTS
-from db import get_db_instance
-from dexcom import Dexcom
+import cgm
+import db
+import epd
 from canvas import Canvas
 from chart import CgmChart
 from logger_setup import configure_logger
-from screen import WaveshareEpd
 
 
 logger = logging.getLogger(__name__)
@@ -48,15 +47,14 @@ class Dexcreen:
       self.db.close()
     if self.epd is not None:
       logger.info('Clear screen...')
-      self.epd.init()
+      #self.epd.init()
       self.epd.Clear()
       self.epd.sleep()
-      #WaveshareEpd.module_exit()
 
   def init_db(self):
     try:
       logger.info('Initialize db...')
-      self.db = get_db_instance(db_type=CONSTANTS.DB_TYPE)
+      self.db = db.get_instance()
       logger.info('Initialized db.')
     except Exception as e:
       logger.error(e)
@@ -69,7 +67,6 @@ class Dexcreen:
       logger.info('Loading config...')
       username = os.environ['DEXCOM_USERNAME']
       self.unit = os.environ['DEXCOM_UNIT']
-      self.no_screen = os.environ['DEBUG_WITHOUT_SCREEN']
 
       logger.debug('Load user_id...')
       self.user_id = self.db.get_user_id(username=username)
@@ -79,6 +76,7 @@ class Dexcreen:
       x, y = self.db.select_recent_readings(user_id=self.user_id, hours=3, unit=self.unit)
       self.readings = dict(x=x, y=y)
       logger.debug(f'Loaded x: {len(x)} points, y: {len(y)} points.')
+
     except Exception as e:
       logger.error(e)
       self.cleanup()
@@ -87,7 +85,7 @@ class Dexcreen:
 
   def init_cgm(self):
     try:
-      self.cgm = Dexcom()
+      self.cgm = cgm.get_instance()
     except Exception as e:
       logger.error(e)
       self.cleanup()
@@ -97,8 +95,7 @@ class Dexcreen:
   def init_epd(self):
     try:
       logger.info('Initialize epd...')
-      WaveshareEpd.dummy = False
-      self.epd = WaveshareEpd.get_instance()
+      self.epd = epd.get_instance()
       self.epd.init()
       self.epd.Clear()
       self.canvas = Canvas(epd=self.epd, vertical=False, background_color=255)
@@ -107,15 +104,13 @@ class Dexcreen:
       logger.info('ctrl + c')
       self.cleanup()
       logger.info('Shutdown app in init_epd...')
-      exit()
     except Exception as e:
       logger.error(e)
       self.cleanup()
       logger.error('Shutdown app in init_epd...')
-      exit()      
 
   def get_interval(self):
-    if self.cgm.signal_loss:
+    if self.cgm.signal_loss or self.cgm.is_dummy:
       return self.RECOVERY_INTERVAL
 
     estimated_next_timestamp = (
@@ -166,15 +161,12 @@ class Dexcreen:
   def display_letters(self):
     if not self.initialized:
       return
-    self.epd.init_part()
+    #self.epd.init_part()
 
-    try:
-      canvas = Canvas(epd=self.epd, vertical=False, background_color=255)
-      self.write_letters(canvas)
-      self.epd.display_Partial(self.epd.getbuffer(canvas.image),
-        0, 0, self.epd.width, round(self.epd.height * 0.5))
-    except Exception as e:
-      logger.error(e)
+    canvas = Canvas(epd=self.epd, vertical=False, background_color=255)
+    self.write_letters(canvas)
+    self.epd.display_Partial(self.epd.getbuffer(canvas.image),
+      0, 0, self.epd.width, round(self.epd.height * 0.5))
 
   def write_letters(self, canvas):
     cgm_value = self.cgm_value
@@ -218,7 +210,7 @@ class Dexcreen:
   def display_chart(self):
     if not self.initialized:
       return
-    self.epd.init_part()
+    #self.epd.init_part()
 
     chart = CgmChart(
       epd=self.epd,

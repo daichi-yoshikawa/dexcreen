@@ -6,15 +6,13 @@ from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from constants import DEXCOM
+from constants import CONSTANTS
 from models import User, MgdlReading, MmollReading
 
 
 logger = logging.getLogger(__name__)
 
 class Database(ABC):
-  @staticmethod
-
   @abstractmethod
   def get_user_id(self, username):
     pass
@@ -31,8 +29,33 @@ class Database(ABC):
   def close(self):
     pass
 
+  @property
+  @abstractmethod
+  def is_dummy(self):
+    pass
 
-class SqliteDB(Database):
+
+class DummyDb(Database):
+  def get_user_id(self, username):
+    return 1
+
+  def insert_reading(self, user_id, value, timestamp, unit='mg/dL'):
+    pass
+
+  def select_recent_readings(self, user_id, hours, unit='mg/dL'):
+    x = []
+    y = []
+    return x, y
+
+  def close(self):
+    pass
+
+  @property
+  def is_dummy(self):
+    return True
+
+
+class SqliteDb(Database):
   def __init__(self, db_name):
     logger.info(f'Create sqlite db session({db_name})...')
 
@@ -82,61 +105,18 @@ class SqliteDB(Database):
     self.session.close()
     logger.info(f'Closed sqlite db session({self.db_name}).')
 
+  @property
+  def is_dummy(self):
+    return False
 
-def get_db_instance(db_type='sqlite'):
-  if db_type == 'sqlite':
-    return SqliteDB(db_name=os.getenv('SQLITE_DB_NAME', 'sqlite.db'))
 
-"""
-class Database:
-  def __init__(self):
-    load_dotenv()
-    self.conn = sqlite3.connect(os.environ['SQLITE_DB_NAME'])
-    self.cur = self.conn.cursor()
+def get_instance():
+  use_dummy_db = os.getenv('USE_DUMMY_DB', 'False').lower() in ['1', 'true', 'yes']
+  if use_dummy_db:
+    return DummyDb()
 
-  def get_user_id(self, username):
-    self.cur.execute('SELECT id FROM users WHERE username = ?', (username,))
-    row = self.cur.fetchone()
+  db_name = os.getenv('SQLITE_DB_NAME', 'sqlite.db')
+  return SqliteDb(db_name=db_name)
 
-    if row is not None:
-      user_id = row[0]
-    else:
-      self.cur.execute('INSERT INTO users (username) VALUES (?)', (username,))
-      self.conn.commit()
-      user_id = self.cur.lastrowid
 
-    return user_id
 
-  def insert_reading(self, user_id, value, timestamp, unit='mgdL'):
-    table = 'mgdl_readings' if unit == 'mgdL' else 'mmoll_readings'
-    if unit == 'mgdL':
-      self.cur.execute('''
-        INSERT INTO mgdl_readings (user_id, value, timestamp) VALUES (?, ?, ?)
-      ''', (user_id, value, timestamp))
-    elif unit == 'mmoll':
-      self.cur.execute('''
-        INSERT INTO mmoll_readings (user_id, value, timestamp) VALUES (?, ?, ?)
-      ''', (user_id, value, timestamp))
-    self.conn.commit()
-
-  def select_readings(self, user_id, hours, unit='mgdL'):
-    table = 'mgdl_reading' if unit == 'mgdL' else 'mmoll_readings'
-    self.cur.execute(f'''
-      SELECT value, timestamp FROM {table}
-      WHERE user_id = ? AND timestamp >= DATETIME('now', '-{hours} hours')
-      ORDER BY timestamp ASC
-    ''', (user_id,))
-    rows = self.cur.fetchall()
-
-    x = []
-    y = []
-    for value, timestamp in rows:
-      dt = datetime.strptime(timestamp, DEXCOM.TIMESTAMP_FORMAT)
-      x.append(dt.timestamp())
-      y.append(value)
-
-    return x, y
-
-  def close(self):
-    self.conn.close()
-"""
