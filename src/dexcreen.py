@@ -26,7 +26,7 @@ class Dexcreen:
   n_retry = 0
 
   CGM_REFRESH_INTERVAL = 60 * 5
-  INTERVAL_MARGIN = 5
+  INTERVAL_MARGIN = 10
   RECOVERY_INTERVAL = 45 * 5
   MIN_INTERVAL = 10
   MAX_RETRY = 3
@@ -47,66 +47,38 @@ class Dexcreen:
       self.db.close()
     if self.epd is not None:
       logger.info('Clear screen...')
-      #self.epd.init()
       self.epd.clear()
       self.epd.sleep()
 
   def init_db(self):
-    try:
-      logger.info('Initialize db...')
-      self.db = db.get_instance()
-      logger.info('Initialized db.')
-    except Exception as e:
-      logger.error(e)
-      self.cleanup()
-      logger.error('Shutdown app in init_db...')
-      exit()
+    logger.info('Initialize db...')
+    self.db = db.get_instance()
+    logger.info('Initialized db.')
 
   def load_config(self):
-    try:
-      logger.info('Loading config...')
-      username = os.environ['DEXCOM_USERNAME']
-      self.unit = os.environ['DEXCOM_UNIT']
+    logger.info('Loading config...')
+    username = os.environ['DEXCOM_USERNAME']
+    self.unit = os.environ['DEXCOM_UNIT']
 
-      logger.debug('Load user_id...')
-      self.user_id = self.db.get_user_id(username=username)
-      logger.debug(f'Loaded user_id: {self.user_id}')
+    logger.debug('Load user_id...')
+    self.user_id = self.db.get_user_id(username=username)
+    logger.debug(f'Loaded user_id: {self.user_id}')
 
-      logger.debug('Load last 3 hours cgm reading...')
-      x, y = self.db.select_recent_readings(user_id=self.user_id, hours=3, unit=self.unit)
-      self.readings = dict(x=x, y=y)
-      logger.debug(f'Loaded x: {len(x)} points, y: {len(y)} points.')
-
-    except Exception as e:
-      logger.error(e)
-      self.cleanup()
-      logger.error('Shutdown app in load_config...')
-      exit()
+    logger.debug('Load last 3 hours cgm reading...')
+    x, y = self.db.select_recent_readings(
+      user_id=self.user_id, hours=3, unit=self.unit)
+    self.readings = dict(x=x, y=y)
+    logger.debug(f'Loaded x: {len(x)} points, y: {len(y)} points.')
 
   def init_cgm(self):
-    try:
-      self.cgm = cgm.get_instance()
-    except Exception as e:
-      logger.error(e)
-      self.cleanup()
-      logger.error('Shutdown app in init cgm...')
-      exit()
+    self.cgm = cgm.get_instance()
 
   def init_epd(self):
-    try:
-      logger.info('Initialize epd...')
-      self.epd = epd.get_instance()
-      self.epd.init()
-      self.epd.clear()
-      logger.info('Initialized epd.')
-    except KeyboardInterrupt as e:
-      logger.info('ctrl + c')
-      self.cleanup()
-      logger.info('Shutdown app in init_epd...')
-    except Exception as e:
-      logger.error(e)
-      self.cleanup()
-      logger.error('Shutdown app in init_epd...')
+    logger.info('Initialize epd...')
+    self.epd = epd.get_instance()
+    self.epd.init()
+    self.epd.clear()
+    logger.info('Initialized epd.')
 
   def get_interval(self):
     if self.cgm.signal_loss or self.cgm.is_dummy:
@@ -153,7 +125,8 @@ class Dexcreen:
 
     self.db.insert_reading(
       user_id=self.user_id, value=self.cgm.reading,
-      timestamp=self.cgm.timestamp, unit=self.unit)
+      timestamp=self.cgm.timestamp, unit=self.unit,
+      unique_timestamp=True)
 
   def display_letters(self):
     if not self.initialized:
@@ -178,9 +151,9 @@ class Dexcreen:
       canvas.write((20, 0), f'{reading}', size=200)
       canvas.write((320 + offset, 135), f'mmol/L', size=48)
     canvas.write(
-      (620 if self.cgm.arrow is None else 660, 80),
+      (620 if self.cgm.arrow is None else 660, 100),
       f'{self.cgm.arrow}',
-      size=80 if self.cgm.arrow is None else 120)
+      size=80 if self.cgm.arrow is None else 100)
 
     diff_mins = self.cgm.diff_mins
     if diff_mins is None:

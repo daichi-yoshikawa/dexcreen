@@ -3,7 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, exists
 from sqlalchemy.orm import sessionmaker
 
 from constants import CONSTANTS
@@ -18,7 +18,8 @@ class BaseDatabase(ABC):
     pass
 
   @abstractmethod
-  def insert_reading(self, user_id, value, timestamp, unit='mg/dL'):
+  def insert_reading(
+      self, user_id, value, timestamp, unit='mg/dL', unique_timestamp=False):
     pass
 
   @abstractmethod
@@ -39,7 +40,8 @@ class DummyDb(BaseDatabase):
   def get_user_id(self, username):
     return 1
 
-  def insert_reading(self, user_id, value, timestamp, unit='mg/dL'):
+  def insert_reading(
+      self, user_id, value, timestamp, unit='mg/dL', unique_timestamp=False):
     pass
 
   def select_recent_readings(self, user_id, hours, unit='mg/dL'):
@@ -77,8 +79,16 @@ class SqliteDb(BaseDatabase):
 
     return user.id
 
-  def insert_reading(self, user_id, value, timestamp, unit='mg/dL'):
+  def insert_reading(
+      self, user_id, value, timestamp, unit='mg/dL', unique_timestamp=False):
     model = MgdlReading if unit == 'mg/dL' else MmollReading
+
+    if unique_timestamp:
+      exists = self.session.query(
+        exists().where(model.timestamp == timestamp)).scalar()
+      if exists:
+        return
+
     reading = model(user_id=user_id, value=value, timestamp=timestamp)
     self.session.add(reading)
     self.session.commit()
