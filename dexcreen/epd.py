@@ -8,7 +8,7 @@ epd_module = os.getenv('SCREEN_MODULE', 'epd7in5_V2')
 epd_module = importlib.import_module(f'waveshare_epd.{epd_module}')
 epdconfig = importlib.import_module(f'waveshare_epd.epdconfig')
 
-class BaseEpd(ABC):
+class BaseEpd(ABC): # E-Paper Display
   @abstractmethod
   def init(self):
     pass
@@ -93,55 +93,6 @@ class Epd(epd_module.EPD):
   def display_partial(self, image_buffer, x, y, width, height):
     super().display_Partial(image_buffer, x, y, width, height)
 
-"""
-class WaveshareEpd:
-  screen_module = None
-  dummy = False
-
-  @classmethod
-  def import_screen_module(cls):
-    screen_module = os.getenv('SCREEN_MODULE', 'epd7in5_V2')
-    try:
-      cls.screen_module = importlib.import_module(f'waveshare_epd.{screen_module}')
-    except ModuleNotFoundError:
-      raise ImportError(f'Could not import waveshare_epd.{screen_module}')
-
-  @classmethod
-  def get_instance(cls):
-    if cls.dummy:
-      return DummyEpd()
-
-    if cls.screen_module is None:
-      cls.import_screen_module()
-    return cls.screen_module.EPD()
-
-  @classmethod
-  def module_exit(cls):
-    if cls.dummy:
-      return
-
-    if cls.screen_module is None:
-      cls.import_screen_module()
-    cls.screen_module.epdconfig.module_exit(cleanup=True)
-
-  @property
-  def is_dummy(self):
-    return True
-"""
 
 def get_instance():
   return DummyEpd() if use_dummy_epd else Epd()
-
-"""
-def get_instance():
-  use_dummy_epd = os.getenv('USE_DUMMY_EPD', 'False').lower() in ['1', 'true', 'yes']
-  if use_dummy_epd:
-    return DummyEpd()
-
-  try:
-    screen_module = os.getenv('SCREEN_MODULE', 'epd7in5_V2')
-    screen_module = importlib.import_module(f'waveshare_epd.{screen_module}')
-    return screen_module.EPD()
-  except ModuleNotFoundError:
-    raise ImportError(f'Could not import waveshare_epd.{screen_module}')
-"""
