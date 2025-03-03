@@ -98,37 +98,3 @@ if __name__ == "__main__":
       dexcreen.cleanup()
       if keyboard_interrupt:
         break
-  """
-  dexcreen.init()
-
-  stop_event = threading.Event()
-  threads = [
-    threading.Thread(target=fetch_cgm_data, args=(stop_event,)),
-    threading.Thread(target=refresh_screen_letters, args=(stop_event,)),
-    threading.Thread(target=refresh_screen_chart, args=(stop_event,)),
-  ]
-
-  for thread in threads:
-    thread.start()
-
-  try:
-    for thread in threads:
-      thread.join()
-  except KeyboardInterrupt:
-    logger.info('KeyboardInterrupt detected.')
-    stop_event.set()
-    for thread in threads:
-      thread.join()
-    logger.info('All threads stopped due to KeyboardInterrupt.')
-  except Exception as e:
-    logger.error('Exception in one of the threads: {e}')
-    stop_event.set()
-    for thread in threads:
-      thread.join()
-    logger.error('All threads stopped due to Exception.')
-  else:
-    logger.info('All threads stopped without error')
-  finally:
-    dexcreen.cleanup()
-    logger.info('Dexcreen exits.')
-  """
