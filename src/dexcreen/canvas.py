@@ -26,6 +26,7 @@ Fonts = {
   '48': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 48),
   '36': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 36),
   '24': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 24),
+  '18': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 18),
   '12': ImageFont.truetype(os.path.join(PIC_PATH, FONT_FILE_NAME), 12),
 }
 
@@ -38,14 +39,14 @@ class Canvas:
   def write(self, xy, text, size, color=0):
     self.draw.text(xy=xy, text=text, fill=color, font=Fonts[f'{size}'])
 
-  def line(self, xy, color=0, width=0):
-    self.draw.line(xy=xy, fill=color, width=width)
+  def line(self, xy, fill=0, width=0):
+    self.draw.line(xy=xy, fill=fill, width=width)
 
-  def rectangle(self, xy, color=0, fill=None):
-    self.draw.rectangle(xy=xy, outline='(0, 0, 0)', fill='(0, 0, 0)')
+  def rectangle(self, xy, outline=0, fill=None):
+    self.draw.rectangle(xy=xy, outline=outline, fill=fill)
 
-  def arc(self, xy, color=0, fill=None):
-    self.draw.arc(xy=xy, outline=color, fill=fill)
+  def arc(self, xy, outline=0, fill=None):
+    self.draw.arc(xy=xy, outline=outline, fill=fill)
 
-  def chord(self, xy, start, end, color=0, fill=None):
-    self.draw.chord(xy=xy, start=start, end=end, outline=color, fill=fill)
+  def chord(self, xy, start, end, outline=0, fill=None):
+    self.draw.chord(xy=xy, start=start, end=end, outline=outline, fill=fill)

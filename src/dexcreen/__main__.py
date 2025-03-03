@@ -68,9 +68,9 @@ def run_all_threads():
     threading.Thread(
       target=fetch_cgm_data, args=(stop_event, exception_queue)),
     threading.Thread(
-      target=refresh_screen_letters, args=(stop_event, exception_queue, 3)),
+      target=refresh_screen_letters, args=(stop_event, exception_queue, 10)),
     threading.Thread(
-      target=refresh_screen_chart, args=(stop_event, exception_queue, 10)),
+      target=refresh_screen_chart, args=(stop_event, exception_queue, 2)),
   ]
 
   for thread in threads:

@@ -134,7 +134,7 @@ class Dexcreen:
     canvas = Canvas(epd=self.epd, vertical=False, background_color=255)
     self.write_letters(canvas)
     self.epd.display_partial(self.epd.getbuffer(canvas.image),
-      0, 0, self.epd.width, round(self.epd.height * 0.5))
+      0, 0, self.epd.width, round(self.epd.height * 0.45))
 
   def write_letters(self, canvas):
     reading = self.cgm.reading
@@ -182,10 +182,8 @@ class Dexcreen:
 
     chart = CgmChart(
       epd=self.epd,
-      height=round(self.epd.height * 0.5),
-      width=self.epd.width,
       x_offset=0,
-      y_offset=round(self.epd.height*0.5),
+      y_offset=round(self.epd.height*0.45),
       display_hours=3,
       y_max=300,
       y_min=40,
