@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 from pydexcom import Dexcom as PyDexcom
 from pydexcom.const import Region, TREND_ARROWS, TREND_DESCRIPTIONS
 
-from constants import DEXCOM
+from .constants import DEXCOM
 
 
 class BaseCgm(ABC):

@@ -3,12 +3,10 @@ import logging
 import time
 from datetime import datetime, timedelta
 
-import cgm
-import db
-import epd
-from canvas import Canvas
-from chart import CgmChart
-from logger_setup import configure_logger
+from . import cgm, db, epd
+from .canvas import Canvas
+from .chart import CgmChart
+from .logger_setup import configure_logger
 
 
 logger = logging.getLogger(__name__)

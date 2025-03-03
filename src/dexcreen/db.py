@@ -6,8 +6,8 @@ from datetime import datetime, timedelta
 from sqlalchemy import create_engine, exists
 from sqlalchemy.orm import sessionmaker
 
-from constants import CONSTANTS
-from models import User, MgdlReading, MmollReading
+from .constants import CONSTANTS
+from .models import User, MgdlReading, MmollReading
 
 
 logger = logging.getLogger(__name__)

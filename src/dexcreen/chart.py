@@ -1,6 +1,6 @@
 from PIL import Image, ImageDraw
 
-from canvas import Canvas
+from .canvas import Canvas
 
 
 class CgmChart:

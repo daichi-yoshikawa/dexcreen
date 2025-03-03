@@ -1,6 +1,6 @@
 import logging
 from dotenv import load_dotenv
-from logger_setup import configure_logger
+from .logger_setup import configure_logger
 
 load_dotenv()
 configure_logger()
@@ -11,7 +11,7 @@ import threading
 
 from dotenv import load_dotenv
 
-from dexcreen import Dexcreen
+from .dexcreen import Dexcreen
 
 
 logger = logging.getLogger(__name__)

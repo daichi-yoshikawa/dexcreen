@@ -7,7 +7,7 @@ from sqlalchemy import pool
 
 from alembic import context
 
-from src.models import Base
+from src.dexcreen.models import Base
 
 
 load_dotenv()
