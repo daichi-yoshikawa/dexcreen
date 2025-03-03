@@ -13,7 +13,7 @@ from pydexcom.const import Region, TREND_ARROWS, TREND_DESCRIPTIONS
 from constants import DEXCOM
 
 
-class Cgm(ABC):
+class BaseCgm(ABC):
   @abstractmethod
   def fetch(self):
     pass
@@ -69,7 +69,7 @@ class Cgm(ABC):
     pass
 
 
-class DummyCgm(Cgm):
+class DummyCgm(BaseCgm):
   DUMMY_MGDL_VALUES = [40, 60, 90, 120, 180, 240, 400]
 
   def __init__(self):
@@ -122,7 +122,7 @@ class DummyCgm(Cgm):
     ])
 
 
-class Dexcom(Cgm):
+class Dexcom(BaseCgm):
   def __init__(self):
     username = os.environ['DEXCOM_USERNAME']
     password = os.environ['DEXCOM_PASSWORD']
@@ -150,19 +150,19 @@ class Dexcom(Cgm):
 
   @property
   def trend(self):
-    return self.data.trend_description if self.data is not None else 'N/A'
+    return None if self.data is None else self.data.trend_description
 
   @property
   def arrow(self):
-    return self.data.trend_arrow if self.data is not None else 'N/A'
+    return None if self.data is None else self.data.trend_arrow
 
   @property
   def mgdL(self):
-    return self.data.value if self.data is not None else 'N/A'
+    return None if self.data is None else self.data.value
 
   @property
   def mmoll(self):
-    return self.data.mmol_l if self.data is not None else 'N/A'
+    return None if self.data is None else self.data.mmol_l
 
   @property
   def reading(self):
@@ -170,7 +170,7 @@ class Dexcom(Cgm):
 
   @property
   def timestamp(self):
-    return self.data.datetime if self.data is not None else 'N/A'
+    return None if self.data is None else self.data.datetime
 
   @property
   def diff_mins(self):
@@ -186,7 +186,7 @@ class Dexcom(Cgm):
   @property
   def n_mins_ago(self):
     if self.data is None:
-      return 'N/A'
+      return None
 
     latest = datetime.fromisoformat(
       self.timestamp.strftime(DEXCOM.TIMESTAMP_FORMAT))

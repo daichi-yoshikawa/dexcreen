@@ -48,7 +48,7 @@ class Dexcreen:
     if self.epd is not None:
       logger.info('Clear screen...')
       #self.epd.init()
-      self.epd.Clear()
+      self.epd.clear()
       self.epd.sleep()
 
   def init_db(self):
@@ -97,8 +97,7 @@ class Dexcreen:
       logger.info('Initialize epd...')
       self.epd = epd.get_instance()
       self.epd.init()
-      self.epd.Clear()
-      self.canvas = Canvas(epd=self.epd, vertical=False, background_color=255)
+      self.epd.clear()
       logger.info('Initialized epd.')
     except KeyboardInterrupt as e:
       logger.info('ctrl + c')
@@ -159,11 +158,11 @@ class Dexcreen:
   def display_letters(self):
     if not self.initialized:
       return
-    #self.epd.init_part()
+    self.epd.init_part()
 
     canvas = Canvas(epd=self.epd, vertical=False, background_color=255)
     self.write_letters(canvas)
-    self.epd.display_Partial(self.epd.getbuffer(canvas.image),
+    self.epd.display_partial(self.epd.getbuffer(canvas.image),
       0, 0, self.epd.width, round(self.epd.height * 0.5))
 
   def write_letters(self, canvas):
@@ -208,7 +207,7 @@ class Dexcreen:
   def display_chart(self):
     if not self.initialized:
       return
-    #self.epd.init_part()
+    self.epd.init_part()
 
     chart = CgmChart(
       epd=self.epd,

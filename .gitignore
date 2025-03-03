@@ -3,6 +3,7 @@
 ~*
 *.bak
 *.swp
+*.swo
 *.db
 
 # pyenv local version file

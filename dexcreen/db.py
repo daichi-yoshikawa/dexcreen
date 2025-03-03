@@ -12,7 +12,7 @@ from models import User, MgdlReading, MmollReading
 
 logger = logging.getLogger(__name__)
 
-class Database(ABC):
+class BaseDatabase(ABC):
   @abstractmethod
   def get_user_id(self, username):
     pass
@@ -35,7 +35,7 @@ class Database(ABC):
     pass
 
 
-class DummyDb(Database):
+class DummyDb(BaseDatabase):
   def get_user_id(self, username):
     return 1
 
@@ -55,7 +55,7 @@ class DummyDb(Database):
     return True
 
 
-class SqliteDb(Database):
+class SqliteDb(BaseDatabase):
   def __init__(self, db_name):
     logger.info(f'Create sqlite db session({db_name})...')
 
