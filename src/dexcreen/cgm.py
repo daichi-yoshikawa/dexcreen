@@ -104,7 +104,7 @@ class DummyCgm(BaseCgm):
 
   @property
   def reading(self):
-    return self.mgdL if self.unit == 'mg/dL' else self.mmoll
+    return self.mgdL
 
   @property
   def timestamp(self):
@@ -166,7 +166,7 @@ class Dexcom(BaseCgm):
 
   @property
   def reading(self):
-    return self.mgdL if self.unit == 'mg/dL' else self.mmoll
+    return self.mgdL
 
   @property
   def timestamp(self):

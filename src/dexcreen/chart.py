@@ -9,9 +9,6 @@ class CgmChart:
   def __init__(
       self, epd, x_offset=0, y_offset=0, display_hours=3,
       y_max=300, y_min=40, unit='mg/dL', background_color=255):
-    #self.height = height
-    #self.width = width
-
     self.padding_right = 40
     self.padding_bottom = 20
 
@@ -26,8 +23,8 @@ class CgmChart:
 
     self.display_hours = display_hours
 
-    self.y_max = y_max if unit == 'mg/dL' else round(y_max * 18)
-    self.y_min = y_min if unit == 'mg/dL' else round(y_min * 18)
+    self.y_max = y_max
+    self.y_min = y_min
 
     self.unit = unit
     self.background_color = background_color

@@ -7,7 +7,7 @@ from sqlalchemy import create_engine, exists
 from sqlalchemy.orm import sessionmaker
 
 from .constants import CONSTANTS
-from .models import User, MgdlReading, MmollReading
+from .models import User, CgmReading
 
 
 logger = logging.getLogger(__name__)
@@ -19,11 +19,11 @@ class BaseDatabase(ABC):
 
   @abstractmethod
   def insert_reading(
-      self, user_id, value, timestamp, unit='mg/dL', unique_timestamp=False):
+      self, user_id, value, timestamp, unique_timestamp=False):
     pass
 
   @abstractmethod
-  def select_recent_readings(self, user_id, hours, unit='mg/dL'):
+  def select_recent_readings(self, user_id, hours):
     pass
 
   @abstractmethod
@@ -41,10 +41,10 @@ class DummyDb(BaseDatabase):
     return 1
 
   def insert_reading(
-      self, user_id, value, timestamp, unit='mg/dL', unique_timestamp=False):
+      self, user_id, value, timestamp, unique_timestamp=False):
     pass
 
-  def select_recent_readings(self, user_id, hours, unit='mg/dL'):
+  def select_recent_readings(self, user_id, hours):
     x = []
     y = []
     return x, y
@@ -80,26 +80,22 @@ class SqliteDb(BaseDatabase):
     return user.id
 
   def insert_reading(
-      self, user_id, value, timestamp, unit='mg/dL', unique_timestamp=False):
-    model = MgdlReading if unit == 'mg/dL' else MmollReading
-
+      self, user_id, value, timestamp, unique_timestamp=False):
     if unique_timestamp:
       exists = self.session.query(
-        exists().where(model.timestamp == timestamp)).scalar()
+        exists().where(CgmReading.timestamp == timestamp)).scalar()
       if exists:
         return
 
-    reading = model(user_id=user_id, value=value, timestamp=timestamp)
+    reading = CgmReading(user_id=user_id, value=value, timestamp=timestamp)
     self.session.add(reading)
     self.session.commit()
 
-  def select_recent_readings(self, user_id, hours, unit='mg/dL'):
-    model = MgdlReading if unit == 'mg/dL' else MmollReading
-
+  def select_recent_readings(self, user_id, hours):
     cutoff = datetime.now() - timedelta(hours=hours)
-    readings = self.session.query(model)\
-      .filter(model.user_id == user_id, model.timestamp >= cutoff)\
-      .order_by(model.timestamp.asc())\
+    readings = self.session.query(CgmReading)\
+      .filter(CgmReading.user_id == user_id, CgmReading.timestamp >= cutoff)\
+      .order_by(CgmReading.timestamp.asc())\
       .all()
 
     x = []

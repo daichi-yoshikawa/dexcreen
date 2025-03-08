@@ -63,8 +63,7 @@ class Dexcreen:
     logger.debug(f'Loaded user_id: {self.user_id}')
 
     logger.debug('Load last 3 hours cgm reading...')
-    x, y = self.db.select_recent_readings(
-      user_id=self.user_id, hours=3, unit=self.unit)
+    x, y = self.db.select_recent_readings(user_id=self.user_id, hours=3)
     self.readings = dict(x=x, y=y)
     logger.debug(f'Loaded x: {len(x)} points, y: {len(y)} points.')
 
@@ -123,8 +122,7 @@ class Dexcreen:
 
     self.db.insert_reading(
       user_id=self.user_id, value=self.cgm.reading,
-      timestamp=self.cgm.timestamp, unit=self.unit,
-      unique_timestamp=True)
+      timestamp=self.cgm.timestamp, unique_timestamp=True)
 
   def display_letters(self):
     if not self.initialized:
@@ -137,7 +135,7 @@ class Dexcreen:
       0, 0, self.epd.width, round(self.epd.height * 0.45))
 
   def write_letters(self, canvas):
-    reading = self.cgm.reading
+    reading = self.cgm.reading if self.unit == 'mg/dL' else round(self.cgm.reading / 18, 1)
     if reading is None:
       canvas.write((20, 0), 'N/A', size=200)
     elif self.unit == 'mg/dL':
