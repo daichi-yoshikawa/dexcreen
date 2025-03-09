@@ -2,6 +2,7 @@ import os
 import logging
 import time
 from datetime import datetime, timedelta
+from statistics import mean
 
 from . import cgm, db, epd
 from .canvas import Canvas
@@ -17,9 +18,9 @@ class Dexcreen:
   cgm = None
   unit = None
   user_id = None
-  readings = dict(x=[], y=[])
   canvas = None
   initialized = False
+  last_timestamp = None
 
   n_retry = 0
 
@@ -28,6 +29,8 @@ class Dexcreen:
   RECOVERY_INTERVAL = 45 * 5
   MIN_INTERVAL = 10
   MAX_RETRY = 3
+  DISPLAY_HOURS = 3
+  UNIT_MINS = 15
 
   def init(self):
     self.init_db()
@@ -61,11 +64,6 @@ class Dexcreen:
     logger.debug('Load user_id...')
     self.user_id = self.db.get_user_id(username=username)
     logger.debug(f'Loaded user_id: {self.user_id}')
-
-    logger.debug('Load last 3 hours cgm reading...')
-    x, y = self.db.select_recent_readings(user_id=self.user_id, hours=3)
-    self.readings = dict(x=x, y=y)
-    logger.debug(f'Loaded x: {len(x)} points, y: {len(y)} points.')
 
   def init_cgm(self):
     self.cgm = cgm.get_instance()
@@ -114,10 +112,17 @@ class Dexcreen:
       return
 
     self.cgm.fetch()
+    if self.cgm.signal_loss:
+      logger.info('Signal loss')
+      return
     logger.info(
       f'{self.cgm.reading} {self.unit}, {self.cgm.trend}, '
-      f'{self.cgm.arrow}, {self.cgm.n_mins_ago}')
-    if self.cgm.signal_loss:
+      f'{self.cgm.arrow}, {self.cgm.n_mins_ago}, {self.cgm.timestamp}')
+
+    if self.last_timestamp == self.cgm.timestamp:
+      logger.info(
+        'Same timestamp data is fetched. '
+        'Skip inserting data to database.')
       return
 
     self.db.insert_reading(
@@ -173,20 +178,51 @@ class Dexcreen:
       canvas.write((695, 40), f'min', size=36)
       canvas.write((695, 76), f'ago', size=36)
 
+  def get_chart_data(self):
+    x_ticks = self.DISPLAY_HOURS * 60 // self.UNIT_MINS
+    chart_data = []
+
+    for i in range(x_ticks):
+      timedelta_mins_from = self.UNIT_MINS * (i + 1)
+      timedelta_mins_to = self.UNIT_MINS * i
+
+      readings = self.db.select_readings(
+        user_id=self.user_id,
+        timedelta_mins_from=timedelta_mins_from,
+        timedelta_mins_to=timedelta_mins_to,
+      )
+      if len(readings) == 0:
+        continue
+
+      mean_value = round(mean(readings))
+      chart_data.append(
+        dict(
+          value=mean_value,
+          timedelta_mins_from=timedelta_mins_from,
+          timedelta_mins_to=timedelta_mins_to,
+        )
+      )
+    return chart_data
+
   def display_chart(self):
     if not self.initialized:
       return
     self.epd.init_part()
 
+    logger.info('display_chart')
+    chart_data = self.get_chart_data()
+
     chart = CgmChart(
       epd=self.epd,
       x_offset=0,
       y_offset=round(self.epd.height*0.45),
-      display_hours=3,
+      display_hours=self.DISPLAY_HOURS,
+      unit_mins=self.UNIT_MINS,
       y_max=300,
       y_min=40,
       unit=self.unit,
       background_color=255)
-    chart.draw()
+
+    chart.draw(chart_data=chart_data)
     self.write_letters(chart.canvas)
     self.epd.display(self.epd.getbuffer(chart.canvas.image))

@@ -70,7 +70,7 @@ def run_all_threads():
     threading.Thread(
       target=refresh_screen_letters, args=(stop_event, exception_queue, 10)),
     threading.Thread(
-      target=refresh_screen_chart, args=(stop_event, exception_queue, 2)),
+      target=refresh_screen_chart, args=(stop_event, exception_queue, 180)),
   ]
 
   for thread in threads:

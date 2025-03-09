@@ -1,7 +1,7 @@
 import os
 import logging
 from abc import ABC, abstractmethod
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from sqlalchemy import create_engine, exists
 from sqlalchemy.orm import sessionmaker
@@ -20,6 +20,11 @@ class BaseDatabase(ABC):
   @abstractmethod
   def insert_reading(
       self, user_id, value, timestamp, unique_timestamp=False):
+    pass
+
+  @abstractmethod
+  def select_readings(
+      self, user_id, timedelta_minutes_from, timedelta_minutes_to):
     pass
 
   @abstractmethod
@@ -43,6 +48,10 @@ class DummyDb(BaseDatabase):
   def insert_reading(
       self, user_id, value, timestamp, unique_timestamp=False):
     pass
+
+  def select_readings(
+      self, user_id, timedelta_minutes_from, timedelta_minutes_to):
+    return []
 
   def select_recent_readings(self, user_id, hours):
     x = []
@@ -82,14 +91,31 @@ class SqliteDb(BaseDatabase):
   def insert_reading(
       self, user_id, value, timestamp, unique_timestamp=False):
     if unique_timestamp:
-      exists = self.session.query(
+      found = self.session.query(
         exists().where(CgmReading.timestamp == timestamp)).scalar()
-      if exists:
+      if found:
         return
 
-    reading = CgmReading(user_id=user_id, value=value, timestamp=timestamp)
+    timestamp_utc = timestamp.astimezone(timezone.utc)
+    reading = CgmReading(user_id=user_id, value=value, timestamp=timestamp_utc)
     self.session.add(reading)
     self.session.commit()
+
+  def select_readings(
+      self, user_id, timedelta_mins_from, timedelta_mins_to):
+    now_utc = datetime.now(timezone.utc)
+    timestamp_from = now_utc - timedelta(minutes=timedelta_mins_from)
+    timestamp_to = now_utc - timedelta(minutes=timedelta_mins_to)
+
+    readings = (
+      self.session.query(CgmReading)
+        .filter(
+          CgmReading.user_id == user_id,
+          CgmReading.timestamp > timestamp_from,
+          CgmReading.timestamp <= timestamp_to)
+    )
+
+    return [reading.value for reading in readings]
 
   def select_recent_readings(self, user_id, hours):
     cutoff = datetime.now() - timedelta(hours=hours)
