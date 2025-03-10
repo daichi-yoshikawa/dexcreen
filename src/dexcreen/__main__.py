@@ -97,4 +97,4 @@ if __name__ == "__main__":
     finally:
       dexcreen.cleanup()
       if keyboard_interrupt:
-        break
+        exit()
