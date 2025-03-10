@@ -31,6 +31,8 @@ class Dexcreen:
   MAX_RETRY = 3
   DISPLAY_HOURS = 3
   UNIT_MINS = 15
+  DISPLAYED_CGM_READING_MAX=300
+  DISPLAYED_CGM_READING_MIN=40
 
   def init(self):
     self.init_db()
@@ -218,8 +220,8 @@ class Dexcreen:
       y_offset=round(self.epd.height*0.45),
       display_hours=self.DISPLAY_HOURS,
       unit_mins=self.UNIT_MINS,
-      y_max=300,
-      y_min=40,
+      y_max=self.DISPLAYED_CGM_READING_MAX,
+      y_min=self.DISPLAYED_CGM_READING_MIN,
       unit=self.unit,
       background_color=255)
 

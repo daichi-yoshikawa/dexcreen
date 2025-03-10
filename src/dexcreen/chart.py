@@ -9,8 +9,6 @@ from .datetime_utils import get_delta_minutes
 logger = logging.getLogger(__name__)
 
 class CgmChart:
-  UNIT_MINS = 15
-
   def __init__(
       self, epd, x_offset=0, y_offset=0, display_hours=3,
       unit_mins=15, y_max=300, y_min=40, unit='mg/dL',
@@ -107,8 +105,10 @@ class CgmChart:
     y = self.get_y_by_value(value)
     y_top = max(self.y_top, y - round(self.block_height * 0.5))
     y_bottom = min(self.y_bottom, y + round(self.block_height * 0.5))
-    x_left = self.get_x_by_value(diff_mins_max)
-    x_right = x_left + self.pixels_per_x_unit * (diff_mins_max - diff_mins_min)
+    x_left = round(self.get_x_by_value(diff_mins_max))
+    x_right = round(
+      x_left + self.pixels_per_x_unit * (diff_mins_max - diff_mins_min))
+
     self.canvas.rectangle((x_left, y_top, x_right, y_bottom), outline=0, fill=0)
 
   def draw(self, chart_data):
@@ -133,22 +133,23 @@ class CgmChart:
     self.draw_x_scale(120, offset=40)
 
     for data in chart_data:
-      print(data)
       self.draw_block(
         diff_mins_min=data['timedelta_mins_to'],
         diff_mins_max=data['timedelta_mins_from'],
-        value=data['value'],
+        value=round(data['value']),
       )
-    # self.draw_block(diff_mins_min=0, diff_mins_max=15, value=80)
-    # self.draw_block(diff_mins_min=15, diff_mins_max=30, value=100)
-    # self.draw_block(diff_mins_min=30, diff_mins_max=45, value=90)
-    # self.draw_block(diff_mins_min=45, diff_mins_max=60, value=95)
-    # self.draw_block(diff_mins_min=60, diff_mins_max=75, value=118)
-    # self.draw_block(diff_mins_min=75, diff_mins_max=90, value=143)
-    # self.draw_block(diff_mins_min=90, diff_mins_max=105, value=198)
-    # self.draw_block(diff_mins_min=105, diff_mins_max=120, value=212)
-    # self.draw_block(diff_mins_min=120, diff_mins_max=135, value=208)
-    # self.draw_block(diff_mins_min=135, diff_mins_max=150, value=219)
-    # self.draw_block(diff_mins_min=150, diff_mins_max=165, value=230)
-    # self.draw_block(diff_mins_min=165, diff_mins_max=180, value=174)
 
+    """
+    self.draw_block(diff_mins_min=0, diff_mins_max=15, value=80)
+    self.draw_block(diff_mins_min=15, diff_mins_max=30, value=100)
+    self.draw_block(diff_mins_min=30, diff_mins_max=45, value=90)
+    self.draw_block(diff_mins_min=45, diff_mins_max=60, value=95)
+    self.draw_block(diff_mins_min=60, diff_mins_max=75, value=118)
+    self.draw_block(diff_mins_min=75, diff_mins_max=90, value=143)
+    self.draw_block(diff_mins_min=90, diff_mins_max=105, value=198)
+    self.draw_block(diff_mins_min=105, diff_mins_max=120, value=212)
+    self.draw_block(diff_mins_min=120, diff_mins_max=135, value=208)
+    self.draw_block(diff_mins_min=135, diff_mins_max=150, value=219)
+    self.draw_block(diff_mins_min=150, diff_mins_max=165, value=230)
+    self.draw_block(diff_mins_min=165, diff_mins_max=180, value=174)
+    """
