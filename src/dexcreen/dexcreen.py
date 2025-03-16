@@ -153,7 +153,8 @@ class Dexcreen:
     
     chart.draw(chart_data=self.chart_data)
     self.write_letters(chart.canvas)
-    self.epd.display(self.epd.getbuffer(chart.canvas.image))
+    self.epd.display_partial(
+      self.epd.getbuffer(chart.canvas.image), 0, 0, self.epd.width, self.epd.height)
 
   def write_letters(self, canvas):
     reading = self.cgm.reading
