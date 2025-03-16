@@ -158,7 +158,7 @@ class Dexcom(BaseCgm):
       return
 
     if (self.data is not None) and (self.last_data is not None):
-      if (self.data.timestamp == self.last_data.timestamp):
+      if (self.data.datetime == self.last_data.datetime):
         return
 
     self.last_data = self.data
