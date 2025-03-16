@@ -138,18 +138,3 @@ class CgmChart:
         diff_mins_max=data['timedelta_mins_from'],
         value=round(data['value']),
       )
-
-    """
-    self.draw_block(diff_mins_min=0, diff_mins_max=15, value=80)
-    self.draw_block(diff_mins_min=15, diff_mins_max=30, value=100)
-    self.draw_block(diff_mins_min=30, diff_mins_max=45, value=90)
-    self.draw_block(diff_mins_min=45, diff_mins_max=60, value=95)
-    self.draw_block(diff_mins_min=60, diff_mins_max=75, value=118)
-    self.draw_block(diff_mins_min=75, diff_mins_max=90, value=143)
-    self.draw_block(diff_mins_min=90, diff_mins_max=105, value=198)
-    self.draw_block(diff_mins_min=105, diff_mins_max=120, value=212)
-    self.draw_block(diff_mins_min=120, diff_mins_max=135, value=208)
-    self.draw_block(diff_mins_min=135, diff_mins_max=150, value=219)
-    self.draw_block(diff_mins_min=150, diff_mins_max=165, value=230)
-    self.draw_block(diff_mins_min=165, diff_mins_max=180, value=174)
-    """
