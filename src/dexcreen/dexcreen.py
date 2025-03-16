@@ -40,6 +40,7 @@ class Dexcreen:
     self.init_cgm()
     self.init_epd()
     self.initialized = True
+    self.chart_data = None
 
   def cleanup(self):
     logger.info('Clean up dexcreen...')
@@ -131,54 +132,78 @@ class Dexcreen:
       user_id=self.user_id, value=self.cgm.reading,
       timestamp=self.cgm.timestamp, unique_timestamp=True)
 
-  def display_letters(self):
+  def refresh_display(self, update_chart=False):
     if not self.initialized:
       return
     self.epd.init_part()
 
-    canvas = Canvas(epd=self.epd, vertical=False, background_color=255)
-    self.write_letters(canvas)
-    self.epd.display_partial(self.epd.getbuffer(canvas.image),
-      0, 0, self.epd.width, round(self.epd.height * 0.45))
+    if self.chart_data is None or update_chart:
+      self.chart_data = self.get_chart_data()
+
+    chart = CgmChart(
+      epd=self.epd,
+      x_offset=0,
+      y_offset=round(self.epd.height * 0.45),
+      display_hours=self.DISPLAY_HOURS,
+      unit_mins=self.UNIT_MINS,
+      y_max=self.DISPLAYED_CGM_READING_MAX,
+      y_min=self.DISPLAYED_CGM_READING_MIN,
+      unit=self.unit,
+      background_color=255)
+    
+    chart.draw(chart_data=self.chart_data)
+    self.write_letters(chart.canvas)
+    self.epd.display(self.epd.getbuffer(chart.canvas.image))
 
   def write_letters(self, canvas):
-    reading = self.cgm.reading if self.unit == 'mg/dL' else round(self.cgm.reading / 18, 1)
+    reading = self.cgm.reading
+    reading_delta = self.cgm.reading_delta
+    unit = self.unit
+
+    if unit != 'mg/dL':
+      reading = round(reading / 18, 1) if reading is not None else None
+      reading_delta = round(reading_delta / 18, 1) if reading_delta is not None else None
+
     if reading is None:
-      canvas.write((20, 0), 'N/A', size=200)
-    elif self.unit == 'mg/dL':
-      offset = 0 if reading < 100 else 100
-      canvas.write((20, 0), f'{reading}', size=200)
-      canvas.write((260 + offset, 135), f'{self.unit}', size=48)
+      canvas.write((20, 0), 'Signal Loss', size=120)
     else:
-      offset = 0 if reading < 10 else 100
       canvas.write((20, 0), f'{reading}', size=200)
-      canvas.write((320 + offset, 135), f'mmol/L', size=48)
-    canvas.write(
-      (620 if self.cgm.arrow is None else 660, 100),
-      f'{self.cgm.arrow}',
-      size=80 if self.cgm.arrow is None else 100)
+
+    if reading_delta is not None:
+      offset = 300
+      if unit == 'mg/dL':
+        offset = 260 if reading < 100 else 370
+      else:
+        offset = 320 if reading < 10 else 390
+
+      display_text = f'{reading_delta}'
+      if reading_delta >= 0:
+        display_text = f'+{display_text}'
+      canvas.write((offset, 95), display_text, size=100)
 
     diff_mins = self.cgm.diff_mins
-    if diff_mins is None:
-      canvas.write((620, 25), 'N/A', size=80)
-    elif diff_mins == 0:
-      canvas.write((610, 25), 'Now', size=80)
-    elif diff_mins > 60:
-      canvas.write((505, 25), f'60+', size=100)
-      canvas.write((680, 40), f'mins', size=36)
-      canvas.write((680, 76), f'ago', size=36)
-    elif diff_mins > 9:
-      canvas.write((545, 20), f'{diff_mins}', size=100)
-      canvas.write((680, 40), f'mins', size=36)
-      canvas.write((680, 76), f'ago', size=36)
-    elif diff_mins > 1:
-      canvas.write((600, 20), f'{diff_mins}', size=100)
-      canvas.write((680, 40), f'mins', size=36)
-      canvas.write((680, 76), f'ago', size=36)
-    elif diff_mins == 1:
-      canvas.write((620, 20), f'{diff_mins}', size=100)
-      canvas.write((695, 40), f'min', size=36)
-      canvas.write((695, 76), f'ago', size=36)
+    if diff_mins is not None:
+      if diff_mins == 0:
+        canvas.write((610, 25), 'Now', size=80)
+      elif diff_mins > 60:
+        canvas.write((505, 25), f'60+', size=100)
+        canvas.write((680, 40), f'mins', size=36)
+        canvas.write((680, 76), f'ago', size=36)
+      elif diff_mins > 9:
+        canvas.write((545, 20), f'{diff_mins}', size=100)
+        canvas.write((680, 40), f'mins', size=36)
+        canvas.write((680, 76), f'ago', size=36)
+      elif diff_mins > 1:
+        canvas.write((600, 20), f'{diff_mins}', size=100)
+        canvas.write((680, 40), f'mins', size=36)
+        canvas.write((680, 76), f'ago', size=36)
+      elif diff_mins == 1:
+        canvas.write((620, 20), f'{diff_mins}', size=100)
+        canvas.write((695, 40), f'min', size=36)
+        canvas.write((695, 76), f'ago', size=36)
+
+    if self.cgm.arrow is not None:
+      canvas.write((660, 100), f'{self.cgm.arrow}', 100)
 
   def get_chart_data(self):
     x_ticks = self.DISPLAY_HOURS * 60 // self.UNIT_MINS
@@ -205,26 +230,3 @@ class Dexcreen:
         )
       )
     return chart_data
-
-  def display_chart(self):
-    if not self.initialized:
-      return
-    self.epd.init_part()
-
-    logger.info('display_chart')
-    chart_data = self.get_chart_data()
-
-    chart = CgmChart(
-      epd=self.epd,
-      x_offset=0,
-      y_offset=round(self.epd.height*0.45),
-      display_hours=self.DISPLAY_HOURS,
-      unit_mins=self.UNIT_MINS,
-      y_max=self.DISPLAYED_CGM_READING_MAX,
-      y_min=self.DISPLAYED_CGM_READING_MIN,
-      unit=self.unit,
-      background_color=255)
-
-    chart.draw(chart_data=chart_data)
-    self.write_letters(chart.canvas)
-    self.epd.display(self.epd.getbuffer(chart.canvas.image))

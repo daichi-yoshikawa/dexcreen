@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 
 from pydexcom import Dexcom as PyDexcom
 from pydexcom.const import Region, TREND_ARROWS, TREND_DESCRIPTIONS
+from pydexcom.errors import AccountError
 
 from .constants import DEXCOM
 
@@ -51,6 +52,11 @@ class BaseCgm(ABC):
   @property
   @abstractmethod
   def reading(self):
+    pass
+
+  @property
+  @abstractmethod
+  def reading_delta(self):
     pass
 
   @property
@@ -107,6 +113,10 @@ class DummyCgm(BaseCgm):
     return self.mgdL
 
   @property
+  def reading_delta(self):
+    return 0
+
+  @property
   def timestamp(self):
     return datetime.now() + timedelta(seconds=10)
 
@@ -129,14 +139,29 @@ class Dexcom(BaseCgm):
     region = os.environ['DEXCOM_REGION']
     self.unit = os.getenv('DEXCOM_READING_UNIT', 'mg/dL')
 
-    self.dexcom = PyDexcom(username=username, password=password, region=region)
+    try:
+      self.dexcom = PyDexcom(
+        username=username, password=password, region=region)
+    except AccountError as e:
+      logger.info(e)
+      logger.info('Please check username and password for Dexcom account.')
+      raise e
+    except Exception as e:
+      raise e
+
     self.data = None
+    self.last_data = None
 
   def fetch(self):
     data = self.dexcom.get_current_glucose_reading()
     if data is None:
       return
 
+    if (self.data is not None) and (self.last_data is not None):
+      if (self.data.timestamp == self.last_data.timestamp):
+        return
+
+    self.last_data = self.data
     self.data = data
 
   @property
@@ -167,6 +192,14 @@ class Dexcom(BaseCgm):
   @property
   def reading(self):
     return self.mgdL
+
+  @property
+  def reading_delta(self):
+    if (self.data is None) or (self.last_data is None):
+      return None
+    if self.data.datetime == self.last_data.datetime:
+      return 0
+    return self.data.value - self.last_data.value
 
   @property
   def timestamp(self):

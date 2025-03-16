@@ -34,25 +34,19 @@ def fetch_cgm_data(stop_event, exception_queue):
     stop_event.wait(timeout=interval)
 
 
-def refresh_screen_letters(stop_event, exception_queue, timeout=3):
+def refresh_screen(
+    stop_event, exception_queue, timeout, chart_update_period):
+  count = 0
   while not stop_event.is_set():
     with lock:
       try:
-        dexcreen.display_letters()
+        count += 1
+        update_chart = timeout * count >= chart_update_period
+        dexcreen.refresh_display(update_chart=update_chart)
+        count = 0 if update_chart else count
+
       except Exception as e:
         logger.error(f'Exception in refresh_screen_letters thread: {e}')
-        exception_queue.put(e)
-        stop_event.set()
-    stop_event.wait(timeout=timeout)
-
-
-def refresh_screen_chart(stop_event, exception_queue, timeout=10):
-  while not stop_event.is_set():
-    with lock:
-      try:
-        dexcreen.display_chart()
-      except Exception as e:
-        logger.error(f'Exception in refresh_screen_chart: {e}')
         exception_queue.put(e)
         stop_event.set()
     stop_event.wait(timeout=timeout)
@@ -68,9 +62,7 @@ def run_all_threads():
     threading.Thread(
       target=fetch_cgm_data, args=(stop_event, exception_queue)),
     threading.Thread(
-      target=refresh_screen_letters, args=(stop_event, exception_queue, 10)),
-    threading.Thread(
-      target=refresh_screen_chart, args=(stop_event, exception_queue, 180)),
+      target=refresh_screen, args=(stop_event, exception_queue, 10, 180)),
   ]
 
   for thread in threads:
